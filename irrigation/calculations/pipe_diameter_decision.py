@@ -134,7 +134,12 @@ def analyze_pipe_diameter_decision(
             if best_lifecycle else None
         ),
         "basis": "lowest_net_present_life_cycle_cost_among_velocity_acceptable_diameters",
-        "status": "recommended" if best_lifecycle else "no_velocity_acceptable_diameter",
+        "status": (
+    "recommended" if best_lifecycle else
+    "no_feasible_diameter" if not successful else
+    "no_velocity_acceptable_diameter" if not eligible_lifecycle else
+    "no_feasible_lifecycle_cost" 
+),
         "velocity_limits_m_s": {
             "minimum": minimum_velocity_m_s,
             "maximum": maximum_velocity_m_s,
