@@ -67,6 +67,7 @@ from .pump_power import (
 
 from .operating_analysis import (
     analyze_pump_operation,
+    analyze_pump_system,
 )
 
 from .sector_pump_compatibility import (
