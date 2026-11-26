@@ -5,6 +5,7 @@ from .pipe_diameter_payback import analyze_pipe_diameter_payback
 from .pipe_economic_sensitivity import analyze_pipe_economic_sensitivity
 from .pipe_lifecycle_cost import analyze_pipe_lifecycle_cost
 from .pipe_velocity import assess_pipe_velocity
+from .pipe_specifications import analyze_pipe_specification
 
 
 def analyze_pipe_diameter_decision(
@@ -28,6 +29,7 @@ def analyze_pipe_diameter_decision(
     sensitivity_cases=None,
     minimum_velocity_m_s=0.6,
     maximum_velocity_m_s=1.5,
+    pipe_specifications=None,
 ):
     """Run hydraulic, operating, economic, payback, and life-cycle analyses.
 
@@ -35,6 +37,45 @@ def analyze_pipe_diameter_decision(
     downstream payback and life-cycle calculations. Sensitivity analysis
     is optional because it requires a separately defined set of cases.
     """
+    specifications_by_diameter = {}
+    if pipe_specifications is not None:
+        if not isinstance(pipe_specifications, (list, tuple)):
+            raise ValueError("Pipe specifications must be a list of manufacturer records.")
+        for record in pipe_specifications:
+            if not isinstance(record, dict):
+                raise ValueError("Each pipe specification must be a dictionary.")
+            required = {
+                "pipe_diameter_m", "outside_diameter_m", "wall_thickness_m",
+                "design_pressure_bar", "rated_pressure_bar", "material",
+            }
+            if set(record) != required:
+                raise ValueError(
+                    "Each pipe specification requires pipe_diameter_m, outside_diameter_m, "
+                    "wall_thickness_m, design_pressure_bar, rated_pressure_bar, and material."
+                )
+            identifier = record["pipe_diameter_m"]
+            if identifier in specifications_by_diameter:
+                raise ValueError("Pipe specification diameters must be unique.")
+            checked = analyze_pipe_specification(
+                outside_diameter_m=record["outside_diameter_m"],
+                wall_thickness_m=record["wall_thickness_m"],
+                design_pressure_bar=record["design_pressure_bar"],
+                rated_pressure_bar=record["rated_pressure_bar"],
+                material=record["material"],
+            )
+            if not math.isclose(
+                float(identifier), checked["internal_diameter_m"],
+                rel_tol=1e-7, abs_tol=1e-9,
+            ):
+                raise ValueError(
+                    "pipe_diameter_m must equal the calculated manufacturer internal diameter."
+                )
+            specifications_by_diameter[identifier] = checked
+        if set(specifications_by_diameter) != set(pipe_diameters_m):
+            raise ValueError(
+                "Pipe specifications must cover every candidate internal diameter exactly."
+            )
+
     economic = compare_pipe_diameter_economics(
         pump_data=pump_data,
         system_curve_parameters=system_curve_parameters,
@@ -94,6 +135,7 @@ def analyze_pipe_diameter_decision(
         if item.get("status") == "calculated"
     }
     velocity_assessments = []
+    pressure_assessments = []
     eligible_lifecycle = []
     for scenario in economic["scenarios"]:
         diameter = scenario["pipe_diameter_m"]
@@ -104,10 +146,30 @@ def analyze_pipe_diameter_decision(
                 "assessment": "hydraulic_analysis_unavailable",
             })
             continue
+        specification = specifications_by_diameter.get(diameter)
+        if pipe_specifications is None:
+            pressure_result = {
+                "status": "not_provided",
+                "within_rating": None,
+                "assessment": "manufacturer_pressure_rating_not_verified",
+            }
+            internal_diameter = diameter
+        else:
+            pressure_result = {
+                **specification["pressure_check"],
+                "status": specification["pressure_check"]["status"],
+                "internal_diameter_m": specification["internal_diameter_m"],
+                "material": specification["material"],
+            }
+            internal_diameter = specification["internal_diameter_m"]
+        pressure_assessments.append({
+            "pipe_diameter_m": diameter,
+            **pressure_result,
+        })
         operating_flow = scenario["analysis"]["pump_analysis"]["operating_point"]["flow_m3_s"]
         velocity_result = assess_pipe_velocity(
             flow_m3_s=operating_flow,
-            internal_diameter_m=diameter,
+            internal_diameter_m=internal_diameter,
             minimum_velocity_m_s=minimum_velocity_m_s,
             maximum_velocity_m_s=maximum_velocity_m_s,
         )
@@ -115,7 +177,11 @@ def analyze_pipe_diameter_decision(
             "pipe_diameter_m": diameter,
             **velocity_result,
         })
-        if velocity_result["status"] == "within_range":
+        pressure_eligible = (
+            pipe_specifications is None
+            or pressure_result["within_rating"] is True
+        )
+        if velocity_result["status"] == "within_range" and pressure_eligible:
             life = lifecycle_by_diameter.get(diameter)
             if life is not None:
                 eligible_lifecycle.append(life)
@@ -155,6 +221,8 @@ def analyze_pipe_diameter_decision(
     )
 
     missing_data = []
+    if pipe_specifications is None:
+        missing_data.append("Manufacturer pipe dimensions and pressure ratings were not supplied; pressure suitability is unverified.")
     if pump_efficiency_percent is None and not pump_data.get("efficiency_curve"):
         missing_data.append("Measured pump efficiency or manufacturer efficiency curve.")
     if not pump_data.get("rated_motor_power_kw"):
@@ -171,6 +239,8 @@ def analyze_pipe_diameter_decision(
     return {
         "recommendation": recommendation,
         "velocity_assessments": velocity_assessments,
+        "pressure_assessments": pressure_assessments,
+        "pipe_specifications_verified": pipe_specifications is not None,
         "selected_hydraulic_result": selected,
         "hydraulic_and_economic_comparison": economic,
         "payback_analysis": payback,
@@ -183,6 +253,8 @@ def analyze_pipe_diameter_decision(
             "Economic sensitivity cases do not replace the velocity eligibility check applied to the baseline recommendation.",
             "The recommendation depends on user-supplied pump, pipe, tariff, and cost data.",
             "A recommendation is not a substitute for checking pressure ratings, water velocity, water hammer, and manufacturer limits.",
+            "When manufacturer pipe specifications are supplied, only pressure-compliant candidates are eligible for recommendation; candidate diameters must match calculated internal diameters.",
+            "Without manufacturer pipe specifications, pressure suitability is unverified and the legacy diameter-only recommendation path is retained for compatibility.",
         ],
         "missing_or_unverified_inputs": missing_data,
         "method": "integrated_hydraulic_economic_payback_sensitivity_and_life_cycle_decision",
