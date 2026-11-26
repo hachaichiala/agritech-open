@@ -88,3 +88,70 @@ def test_segment_losses_sum_to_total_head_loss():
     result = analyze_non_compensating_dripline(**_base(emitter_connection_k=0.0))
     assert all(loss > 0 for loss in result["segment_head_losses_m"])
     assert sum(result["segment_head_losses_m"]) == pytest.approx(result["head_loss_m"])
+
+
+from irrigation.calculations import analyze_emitter_flow_distribution
+
+
+def test_flow_distribution_reports_low_quarter_uniformity():
+    result = analyze_emitter_flow_distribution([2.0, 3.0, 4.0, 5.0])
+
+    assert result["low_quarter_emitters"] == 1
+    assert result["low_quarter_mean_flow_lph"] == pytest.approx(2.0)
+    assert result["mean_flow_lph"] == pytest.approx(3.5)
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(
+        2.0 / 3.5 * 100.0
+    )
+    assert result["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(40.0)
+
+
+def test_flow_distribution_uses_ceil_for_low_quarter_sample_count():
+    result = analyze_emitter_flow_distribution([1.0, 2.0, 3.0, 4.0, 5.0])
+
+    assert result["low_quarter_emitters"] == 2
+    assert result["low_quarter_mean_flow_lph"] == pytest.approx(1.5)
+
+
+def test_equal_emitter_flows_have_full_distribution_uniformity():
+    result = analyze_emitter_flow_distribution([4.0] * 8)
+
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(100.0)
+    assert result["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(100.0)
+
+
+def test_flow_distribution_is_independent_of_input_order():
+    first = analyze_emitter_flow_distribution([1.0, 2.0, 3.0, 4.0])
+    second = analyze_emitter_flow_distribution([4.0, 3.0, 2.0, 1.0])
+
+    assert first == second
+
+
+def test_flow_distribution_scales_with_flow_units():
+    base = analyze_emitter_flow_distribution([1.0, 2.0, 3.0, 4.0])
+    scaled = analyze_emitter_flow_distribution([10.0, 20.0, 30.0, 40.0])
+
+    assert scaled["low_quarter_distribution_uniformity_percentage"] == pytest.approx(
+        base["low_quarter_distribution_uniformity_percentage"]
+    )
+
+
+@pytest.mark.parametrize(
+    "flows",
+    [[], [0.0, 1.0], [-1.0, 2.0], [float("nan"), 1.0],
+     [float("inf"), 1.0], [True, 2.0], ["2", 3.0], None],
+)
+def test_flow_distribution_rejects_invalid_inputs(flows):
+    with pytest.raises(ValueError):
+        analyze_emitter_flow_distribution(flows)
+
+
+def test_non_compensating_solver_reports_standard_low_quarter_uniformity():
+    result = analyze_non_compensating_dripline(**_base())
+
+    expected = analyze_emitter_flow_distribution(result["emitter_flows_lph"])
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(
+        expected["low_quarter_distribution_uniformity_percentage"]
+    )
+    assert result["flow_uniformity_percentage"] == pytest.approx(
+        result["minimum_to_maximum_flow_ratio_percentage"]
+    )
