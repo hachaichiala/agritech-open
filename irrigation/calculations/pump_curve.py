@@ -125,13 +125,18 @@ def find_pump_operating_point(pump_curve, system_curve) -> dict:
     for index in range(len(breakpoints) - 1):
         left_difference = differences[index]
         right_difference = differences[index + 1]
-        if left_difference * right_difference < 0:
+        if (
+            (left_difference < 0 < right_difference)
+            or (right_difference < 0 < left_difference)
+        ):
             left_flow = breakpoints[index]
             right_flow = breakpoints[index + 1]
-            fraction = (
-                left_difference
-                / (left_difference - right_difference)
+            difference_scale = max(
+                abs(left_difference), abs(right_difference)
             )
+            scaled_left = abs(left_difference) / difference_scale
+            scaled_right = abs(right_difference) / difference_scale
+            fraction = scaled_left / (scaled_left + scaled_right)
             intersections.append(
                 left_flow + fraction * (right_flow - left_flow)
             )
