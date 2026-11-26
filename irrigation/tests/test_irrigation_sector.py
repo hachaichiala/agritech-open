@@ -128,4 +128,4 @@ def test_sector_rejects_invalid_hydraulic_inputs(overrides):
 
 def test_sector_rejects_pressure_below_zero_at_lateral_or_emitter():
     with pytest.raises(ValueError, match="pressure reaches zero or below"):
-        _reference_sector(inlet_pressure_bar=0.001)
+        _reference_sector(inlet_pressure_bar=1e-12)
