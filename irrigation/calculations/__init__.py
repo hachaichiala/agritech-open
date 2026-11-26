@@ -46,7 +46,11 @@ from .irrigation_sector import (
     analyze_irrigation_sector,
 )
 
-from .pump_curve import find_pump_operating_point
+from .pump_curve import (
+    validate_pump_curve,
+    validate_system_curve,
+    find_pump_operating_point,
+)
 
 from .pump_head import (
     calculate_required_pump_head,
