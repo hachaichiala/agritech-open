@@ -5,6 +5,7 @@ from irrigation.calculations.emitter_pressure import (
     EmitterPressureRange,
     is_pressure_in_compensation_range,
     check_dripline_pressure,
+    analyze_dripline_pressure,
 )
 
 
@@ -16,42 +17,32 @@ def test_default_pressure_range():
 
 
 def test_pressure_inside_range():
-    pressure_range = EmitterPressureRange()
-
     assert is_pressure_in_compensation_range(
-        2.5, pressure_range
+        2.5, EmitterPressureRange()
     ) is True
 
 
 def test_pressure_at_minimum():
-    pressure_range = EmitterPressureRange()
-
     assert is_pressure_in_compensation_range(
-        1.0, pressure_range
+        1.0, EmitterPressureRange()
     ) is True
 
 
 def test_pressure_at_maximum():
-    pressure_range = EmitterPressureRange()
-
     assert is_pressure_in_compensation_range(
-        4.0, pressure_range
+        4.0, EmitterPressureRange()
     ) is True
 
 
 def test_pressure_below_range():
-    pressure_range = EmitterPressureRange()
-
     assert is_pressure_in_compensation_range(
-        0.8, pressure_range
+        0.8, EmitterPressureRange()
     ) is False
 
 
 def test_pressure_above_range():
-    pressure_range = EmitterPressureRange()
-
     assert is_pressure_in_compensation_range(
-        4.5, pressure_range
+        4.5, EmitterPressureRange()
     ) is False
 
 
@@ -60,12 +51,17 @@ def test_invalid_pressure_range():
         EmitterPressureRange(4.0, 1.0)
 
 
-@pytest.mark.parametrize("pressure", [0, -1, True])
+@pytest.mark.parametrize("pressure", [0, -1, True, float("inf"), float("nan")])
 def test_invalid_pressure(pressure):
     with pytest.raises(ValueError):
         is_pressure_in_compensation_range(
             pressure, EmitterPressureRange()
         )
+
+
+def test_invalid_pressure_range_values():
+    with pytest.raises(ValueError):
+        EmitterPressureRange(1.0, float("inf"))
 
 
 def test_dripline_pressure_within_range():
@@ -91,3 +87,45 @@ def test_dripline_outlet_below_compensation_range():
 
     assert result["outlet_within_range"] is False
     assert result["uniform_compensation"] is False
+
+
+def test_analyze_dripline_pressure():
+    result = analyze_dripline_pressure(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["head_loss_m"] == pytest.approx(0.00154314, rel=1e-4)
+    assert result["inlet_pressure_bar"] == 2.0
+    assert result["outlet_pressure_bar"] == pytest.approx(
+        1.9998487, rel=1e-4
+    )
+    assert result["uniform_compensation"] is True
+
+
+def test_analyze_dripline_invalid_length():
+    with pytest.raises(ValueError):
+        analyze_dripline_pressure(
+            inlet_pressure_bar=2.0,
+            length_m=0,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            pressure_range=EmitterPressureRange(),
+        )
+
+
+def test_analyze_dripline_invalid_inlet_pressure():
+    with pytest.raises(ValueError):
+        analyze_dripline_pressure(
+            inlet_pressure_bar=0,
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            pressure_range=EmitterPressureRange(),
+        )
