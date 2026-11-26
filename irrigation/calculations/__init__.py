@@ -34,3 +34,8 @@ from .emitter_pressure import (
     analyze_emitter_pressure_distribution,
     analyze_dripline_emitter_pressures,
 )
+
+from .manifold import (
+    calculate_manifold_total_flow,
+    calculate_manifold_head_loss,
+)
