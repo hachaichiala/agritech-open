@@ -67,6 +67,10 @@ def _decision():
                 {"pipe_diameter_m": 0.063, "status": "calculated", "costs": {"net_present_life_cycle_cost_tnd": 900}},
             ]
         },
+        "velocity_assessments": [
+            {"pipe_diameter_m": 0.05, "velocity_m_s": 0.8, "status": "within_range", "assessment": "acceptable"},
+            {"pipe_diameter_m": 0.063, "velocity_m_s": 0.5, "status": "below_minimum", "assessment": "low_velocity"},
+        ],
         "payback_analysis": {
             "comparisons": [
                 {
@@ -124,3 +128,13 @@ def test_reports_optional_sensitivity_summary():
 def test_rejects_missing_decision_sections():
     with pytest.raises(ValueError, match="recommendation"):
         build_pipe_diameter_report({})
+
+
+
+def test_report_includes_velocity_assessment_and_limits():
+    data = _decision()
+    data["recommendation"]["velocity_limits_m_s"] = {"minimum": 0.6, "maximum": 1.5}
+    report = build_pipe_diameter_report(data)
+    assert report["alternatives"][0]["velocity_assessment"]["velocity_m_s"] == 0.8
+    assert "حدود السرعة" in report["markdown"]
+    assert "السرعة (م/ث)" in report["markdown"]
