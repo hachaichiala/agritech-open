@@ -155,3 +155,30 @@ def test_non_compensating_solver_reports_standard_low_quarter_uniformity():
     assert result["flow_uniformity_percentage"] == pytest.approx(
         result["minimum_to_maximum_flow_ratio_percentage"]
     )
+
+
+def test_solver_reports_downstream_segment_flows_and_mass_balance():
+    result = analyze_non_compensating_dripline(**_base())
+
+    segment_flows = result["segment_flows_lph"]
+    emitter_flows = result["emitter_flows_lph"]
+
+    assert len(segment_flows) == len(emitter_flows)
+    assert segment_flows[0] == pytest.approx(result["total_flow_lph"])
+    assert segment_flows[-1] == pytest.approx(emitter_flows[-1])
+    assert all(
+        segment_flows[index] > segment_flows[index + 1]
+        for index in range(len(segment_flows) - 1)
+    )
+    for index, segment_flow in enumerate(segment_flows):
+        assert segment_flow == pytest.approx(sum(emitter_flows[index:]))
+
+
+def test_zero_discharge_exponent_segment_flows_match_constant_outlets():
+    result = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0)
+    )
+
+    assert result["segment_flows_lph"] == pytest.approx(
+        [4.0 * count for count in range(12, 0, -1)]
+    )
