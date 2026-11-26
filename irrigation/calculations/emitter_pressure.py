@@ -145,6 +145,7 @@ def analyze_dripline_pressure(
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
     emitter_connection_k: float = 0.0,
+    emitter_elevations_m: list | None = None,
 ) -> dict:
     """Calculate dripline losses and check endpoint PC pressure limits."""
 
@@ -160,14 +161,44 @@ def analyze_dripline_pressure(
         emitter_connection_k=emitter_connection_k,
     )
 
-    result = check_dripline_pressure(
+    emitter_pressures_bar = calculate_pressure_at_each_emitter(
         inlet_pressure_bar=inlet_pressure_bar,
-        head_loss_m=head_loss_m,
-        pressure_range=pressure_range,
+        length_m=length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
+        emitter_elevations_m=emitter_elevations_m,
     )
-    result["head_loss_m"] = head_loss_m
+    outlet_pressure_bar = emitter_pressures_bar[-1]
+    if outlet_pressure_bar <= 0:
+        raise ValueError(
+            "Pressure reaches zero or below before the last emitter. "
+            "Check inlet pressure, dripline dimensions, and emitter flow."
+        )
 
-    return result
+    inlet_within_range = is_pressure_in_compensation_range(
+        inlet_pressure_bar, pressure_range
+    )
+    outlet_within_range = is_pressure_in_compensation_range(
+        outlet_pressure_bar, pressure_range
+    )
+    endpoints_within_range = inlet_within_range and outlet_within_range
+    pressure_head_change_m = (
+        inlet_pressure_bar - outlet_pressure_bar
+    ) / BAR_PER_METER_WATER
+
+    return {
+        "inlet_pressure_bar": inlet_pressure_bar,
+        "outlet_pressure_bar": outlet_pressure_bar,
+        "inlet_within_range": inlet_within_range,
+        "outlet_within_range": outlet_within_range,
+        "all_checked_pressures_within_range": endpoints_within_range,
+        "uniform_compensation": endpoints_within_range,
+        "head_loss_m": head_loss_m,
+        "pressure_head_change_m": pressure_head_change_m,
+    }
 
 
 def analyze_emitter_pressure_distribution(
