@@ -84,3 +84,33 @@ def test_rejects_invalid_efficiency_curve(curve):
             "pump_curve": [(0, 40), (0.001, 20)],
             "efficiency_curve": curve,
         })
+
+@pytest.mark.parametrize(
+    "efficiency_curve",
+    [
+        [(False, 10), (0.001, 60)],
+        [(0, True), (0.001, 60)],
+        [(0, 10), (float("inf"), 60)],
+        [(0, 10), (10**400, 60)],
+        [(-0.001, 10), (0.001, 60)],
+        [(0, 10), (0, 60)],
+        [(0.001, 10), (0, 60)],
+        [(0, 10, 20), (0.001, 60)],
+        [(0, 10), "invalid"],
+    ],
+)
+def test_rejects_invalid_efficiency_curve_boundaries(efficiency_curve):
+    with pytest.raises(ValueError):
+        validate_pump_data({
+            "pump_curve": [(0, 40), (0.001, 20)],
+            "efficiency_curve": efficiency_curve,
+        })
+
+
+@pytest.mark.parametrize("power", [10**400, "0.92"])
+def test_rejects_unrepresentable_or_non_numeric_motor_power(power):
+    with pytest.raises(ValueError):
+        validate_pump_data({
+            "pump_curve": [(0, 40), (0.001, 20)],
+            "rated_motor_power_kw": power,
+        })
