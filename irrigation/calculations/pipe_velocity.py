@@ -19,7 +19,16 @@ def calculate_pipe_velocity(flow_m3_s, internal_diameter_m):
     """Calculate mean full-pipe velocity from flow and internal diameter."""
     flow = _positive_finite(flow_m3_s, "Flow")
     diameter = _positive_finite(internal_diameter_m, "Internal pipe diameter")
-    area = math.pi * diameter ** 2 / 4.0
+    try:
+        area = math.pi * diameter ** 2 / 4.0
+    except OverflowError:
+        raise ValueError(
+            "Calculated pipe cross-sectional area must be finite and positive."
+        ) from None
+    if not math.isfinite(area) or area <= 0:
+        raise ValueError(
+            "Calculated pipe cross-sectional area must be finite and positive."
+        )
     velocity = flow / area
     if not math.isfinite(velocity):
         raise ValueError("Calculated pipe velocity must be finite.")
