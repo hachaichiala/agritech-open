@@ -64,3 +64,7 @@ from .pump_data import (
 from .pump_power import (
     calculate_pump_power,
 )
+
+from .operating_analysis import (
+    analyze_pump_operation,
+)
