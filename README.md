@@ -225,6 +225,10 @@ Active development of the irrigation calculation engine.
 - Hydraulic unit conversions.
 - Initial dripline friction loss estimation.
 
+## Hydraulic Methodology
+
+See [HYDRAULIC_METHODS.md](HYDRAULIC_METHODS.md) for the equations, assumptions, reference sources, and current model limitations.
+
 ## Testing
 
 The project uses pytest for automated testing.
