@@ -28,6 +28,11 @@ def analyze_pipe_diameter_payback(economic_comparison):
     if not isinstance(scenarios, list) or len(scenarios) < 2:
         raise ValueError("At least two economic scenarios are required.")
 
+    inputs = economic_comparison.get("economic_inputs")
+    if not isinstance(inputs, dict):
+        raise ValueError("Economic inputs are required.")
+    period = _positive_number(inputs.get("analysis_period_years"), "Analysis period")
+
     calculated = {}
     for scenario in scenarios:
         if not isinstance(scenario, dict):
@@ -41,10 +46,6 @@ def analyze_pipe_diameter_payback(economic_comparison):
         capex = _positive_number(economics.get("pipe_purchase_cost_tnd"), "Pipe purchase cost", allow_zero=True)
         annual_energy_cost = _positive_number(
             economics.get("energy_cost_over_period_tnd"), "Energy cost over period", allow_zero=True
-        )
-        period = _positive_number(
-            economic_comparison.get("economic_inputs", {}).get("analysis_period_years"),
-            "Analysis period",
         )
         annual_energy_cost /= period
         if diameter in calculated:
