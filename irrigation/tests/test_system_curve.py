@@ -100,7 +100,7 @@ def test_rejects_unrepresentable_pipe_velocity():
 def test_rejects_overflow_in_local_head_loss_calculation():
     with pytest.raises(ValueError, match="local head loss"):
         _build(
-            flow_rates_m3_s=[0.0, 1e154],
+            flow_rates_m3_s=[0.0, 1e155],
             upstream_pipe_length_m=0.0,
             upstream_pipe_diameter_m=1.0,
             local_loss_coefficient=1.0,
