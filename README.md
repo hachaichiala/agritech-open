@@ -215,7 +215,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 Project status
 
 
-Initial development and project planning.
+Active development of the irrigation calculation engine.
 
 ## Current Features
 
@@ -229,13 +229,14 @@ Initial development and project planning.
 
 The project uses pytest for automated testing.
 
-Current test suite: 48 tests.
-
-Run tests locally with:
+Run the full irrigation test suite locally with:
 
 ```bash
 python -m pytest irrigation/tests -v
 ```
+
+GitHub Actions runs this test suite automatically on pushes to `main`
+and on pull requests targeting `main`.
 
 ## Development Status
 
@@ -252,8 +253,6 @@ Features:
 
 The default pressure range (1 to 4 bar) is temporary
 and must be replaced with manufacturer specifications.
-
-Current automated test suite: 67 tests.
 
 
 Version: 0.1.0
