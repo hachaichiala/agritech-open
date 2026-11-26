@@ -300,3 +300,101 @@ def test_reference_100m_lateral_with_200_emitters():
     assert head_loss_m * 0.0980665 == pytest.approx(
         0.0916177, rel=1e-6
     )
+
+
+
+def test_zero_emitter_connection_k_preserves_reference_head_loss():
+    result = calculate_dripline_head_loss(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        emitter_connection_k=0.0,
+    )
+    assert result == pytest.approx(0.00154314, rel=1e-4)
+
+
+def test_positive_emitter_connection_k_increases_head_loss():
+    common = dict(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    friction_only = calculate_dripline_head_loss(**common)
+    with_connections = calculate_dripline_head_loss(
+        **common, emitter_connection_k=1.0
+    )
+    assert with_connections > friction_only
+
+
+def test_connection_losses_use_remaining_downstream_flow_at_each_segment():
+    from irrigation.calculations.dripline import (
+        calculate_dripline_segment_head_losses,
+    )
+    from irrigation.calculations.pressure_loss import calculate_minor_head_loss
+    from irrigation.calculations.units import (
+        liters_per_hour_to_cubic_meters_per_second,
+    )
+
+    common = dict(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    friction_segments = calculate_dripline_segment_head_losses(
+        **common, emitter_connection_k=0.0
+    )
+    combined_segments = calculate_dripline_segment_head_losses(
+        **common, emitter_connection_k=1.0
+    )
+    expected_minor_losses = [
+        calculate_minor_head_loss(
+            liters_per_hour_to_cubic_meters_per_second(flow_lph),
+            0.016,
+            1.0,
+        )
+        for flow_lph in (24, 16, 8)
+    ]
+    actual_minor_losses = [
+        combined - friction
+        for combined, friction in zip(combined_segments, friction_segments)
+    ]
+    assert actual_minor_losses == pytest.approx(expected_minor_losses)
+
+
+@pytest.mark.parametrize(
+    "invalid_k",
+    [-1, float("inf"), float("nan"), True],
+)
+def test_invalid_emitter_connection_k_is_rejected(invalid_k):
+    with pytest.raises(ValueError, match="Emitter connection K"):
+        calculate_dripline_head_loss(
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            emitter_connection_k=invalid_k,
+        )
+
+
+def test_connection_losses_reduce_pressure_at_emitters():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    from irrigation.calculations.dripline import (
+        calculate_pressure_at_each_emitter,
+    )
+    without_connections = calculate_pressure_at_each_emitter(**common)
+    with_connections = calculate_pressure_at_each_emitter(
+        **common, emitter_connection_k=1.0
+    )
+    assert all(
+        with_k < without_k
+        for with_k, without_k in zip(with_connections, without_connections)
+    )
