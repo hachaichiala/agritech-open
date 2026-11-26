@@ -53,3 +53,55 @@ def is_pressure_in_compensation_range(
         <= pressure_bar
         <= pressure_range.maximum_bar
     )
+
+def check_dripline_pressure(
+    inlet_pressure_bar: float,
+    head_loss_m: float,
+    pressure_range: EmitterPressureRange,
+) -> dict:
+    """
+    Check inlet and outlet pressures against the PC range.
+
+    Assumes a horizontal pipe and water density of 1000 kg/m³.
+    """
+
+    if (
+        not isinstance(inlet_pressure_bar, (int, float))
+        or isinstance(inlet_pressure_bar, bool)
+        or inlet_pressure_bar <= 0
+    ):
+        raise ValueError("Inlet pressure must be positive.")
+
+    if (
+        not isinstance(head_loss_m, (int, float))
+        or isinstance(head_loss_m, bool)
+        or head_loss_m < 0
+    ):
+        raise ValueError("Head loss must be non-negative.")
+
+    outlet_pressure_bar = (
+        inlet_pressure_bar - head_loss_m * 0.0980665
+    )
+
+    return {
+        "inlet_pressure_bar": inlet_pressure_bar,
+        "outlet_pressure_bar": outlet_pressure_bar,
+        "inlet_within_range": is_pressure_in_compensation_range(
+            inlet_pressure_bar, pressure_range
+        ),
+        "outlet_within_range": (
+            is_pressure_in_compensation_range(
+                outlet_pressure_bar, pressure_range
+            )
+            if outlet_pressure_bar > 0
+            else False
+        ),
+        "uniform_compensation": (
+            is_pressure_in_compensation_range(
+                inlet_pressure_bar, pressure_range
+            )
+            and is_pressure_in_compensation_range(
+                outlet_pressure_bar, pressure_range
+            )
+        ),
+    }
