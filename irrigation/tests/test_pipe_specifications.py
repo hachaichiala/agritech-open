@@ -83,3 +83,31 @@ def test_analyzes_complete_pipe_specification():
 def test_pipe_specification_rejects_empty_material():
     with pytest.raises(ValueError, match="material"):
         analyze_pipe_specification(0.05, 0.003, 5, 6, "  ")
+
+@pytest.mark.parametrize(
+    "outside, wall",
+    [
+        (10**10000, 0.001),
+        (0.05, 10**10000),
+    ],
+)
+def test_dimension_validation_rejects_unrepresentable_integers(outside, wall):
+    with pytest.raises(ValueError, match="positive finite number"):
+        calculate_pipe_internal_diameter(outside, wall)
+
+
+@pytest.mark.parametrize(
+    "design, rated",
+    [
+        (10**10000, 6),
+        (5, 10**10000),
+        ("5", 6),
+        (5, "6"),
+    ],
+)
+def test_pressure_validation_rejects_unrepresentable_or_non_numeric_values(
+    design, rated
+):
+    with pytest.raises(ValueError, match="positive finite number"):
+        assess_pipe_pressure_rating(design, rated)
+
