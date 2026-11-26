@@ -62,7 +62,7 @@ def test_sector_pump_compatibility_interpolates_at_design_flow():
     )
 
 
-@pytest.mark.parametrize("flow_lph", [0.0, 4000.0])
+@pytest.mark.parametrize("flow_lph", [4000.0])
 def test_sector_pump_compatibility_rejects_flow_outside_pump_curve(
     flow_lph,
 ):
@@ -83,6 +83,7 @@ def test_sector_pump_compatibility_rejects_flow_outside_pump_curve(
         None,
         {},
         {"total_flow_lph": 1000.0},
+        {"total_flow_lph": 0.0, "inlet_pressure_bar": 2.0},
         {"total_flow_lph": 1000.0, "inlet_pressure_bar": 0.0},
     ],
 )
