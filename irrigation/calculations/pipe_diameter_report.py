@@ -38,6 +38,11 @@ def build_pipe_diameter_report(decision_result):
         for item in decision_result.get("velocity_assessments", [])
         if isinstance(item, dict)
     }
+    pressure_by_diameter = {
+        item.get("pipe_diameter_m"): item
+        for item in decision_result.get("pressure_assessments", [])
+        if isinstance(item, dict)
+    }
 
     alternatives = []
     for scenario in comparison["scenarios"]:
@@ -45,11 +50,13 @@ def build_pipe_diameter_report(decision_result):
             raise ValueError("Each comparison scenario must be a dictionary.")
         diameter = scenario.get("pipe_diameter_m")
         velocity = velocity_by_diameter.get(diameter)
+        pressure = pressure_by_diameter.get(diameter)
         item = {
             "pipe_diameter_m": diameter,
             "hydraulic_status": scenario.get("status"),
             "economic_status": scenario.get("economic_status"),
             "velocity_assessment": dict(velocity) if velocity else None,
+            "pressure_assessment": dict(pressure) if pressure else None,
         }
         analysis = scenario.get("analysis")
         if isinstance(analysis, dict):
@@ -139,8 +146,8 @@ def build_pipe_diameter_report(decision_result):
         ),
         "",
         "## مقارنة البدائل",
-        "| القطر (م) | الحالة الهيدروليكية | السرعة (م/ث) | تقييم السرعة | التدفق (ل/ث) | HMT (م) | قدرة العمود (كW) | شراء الأنبوب (د.ت) | الطاقة (د.ت) | NPV (د.ت) |",
-        "|---:|---|---:|---|---:|---:|---:|---:|---:|---:|",
+        "| القطر (م) | الحالة الهيدروليكية | الضغط | السرعة (م/ث) | تقييم السرعة | التدفق (ل/ث) | HMT (م) | قدرة العمود (كW) | شراء الأنبوب (د.ت) | الطاقة (د.ت) | NPV (د.ت) |",
+        "|---:|---|---|---:|---|---:|---:|---:|---:|---:|---:|",
     ]
     for item in alternatives:
         point = item.get("operating_point") or {}
@@ -148,12 +155,14 @@ def build_pipe_diameter_report(decision_result):
         economics = item.get("economics") or {}
         life = item.get("life_cycle_cost") or {}
         velocity = item.get("velocity_assessment") or {}
+        pressure = item.get("pressure_assessment") or {}
         shaft_kw = power.get("shaft_power_w")
         lines.append(
             "| "
             + " | ".join([
                 _number(item.get("pipe_diameter_m")),
                 str(item.get("hydraulic_status") or "غير محدد"),
+                str(pressure.get("status") or "غير متاح"),
                 _number(velocity.get("velocity_m_s")),
                 str(velocity.get("assessment") or "غير متاح"),
                 _number(point.get("flow_l_s")),
