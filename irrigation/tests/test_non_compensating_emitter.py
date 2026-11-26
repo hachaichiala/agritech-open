@@ -41,6 +41,58 @@ def test_positive_discharge_exponent_responds_to_local_pressure():
     assert result["emitter_flows_lph"][0] > result["emitter_flows_lph"][-1]
 
 
+
+def test_higher_inlet_pressure_increases_emitter_flows_and_local_pressures():
+    low = analyze_non_compensating_dripline(
+        **_base(inlet_pressure_bar=1.5)
+    )
+    nominal = analyze_non_compensating_dripline(
+        **_base(inlet_pressure_bar=2.0)
+    )
+    high = analyze_non_compensating_dripline(
+        **_base(inlet_pressure_bar=2.5)
+    )
+
+    assert low["converged"] is True
+    assert nominal["converged"] is True
+    assert high["converged"] is True
+    assert low["total_flow_lph"] < nominal["total_flow_lph"] < high["total_flow_lph"]
+    assert low["head_loss_m"] < nominal["head_loss_m"] < high["head_loss_m"]
+
+    for low_pressure, nominal_pressure, high_pressure in zip(
+        low["emitter_pressures_bar"],
+        nominal["emitter_pressures_bar"],
+        high["emitter_pressures_bar"],
+    ):
+        assert low_pressure < nominal_pressure < high_pressure
+
+
+def test_inlet_pressure_shift_preserves_flows_for_zero_discharge_exponent():
+    low = analyze_non_compensating_dripline(
+        **_base(inlet_pressure_bar=1.5, discharge_exponent=0.0)
+    )
+    high = analyze_non_compensating_dripline(
+        **_base(inlet_pressure_bar=2.5, discharge_exponent=0.0)
+    )
+
+    assert high["emitter_flows_lph"] == pytest.approx(
+        low["emitter_flows_lph"]
+    )
+    assert high["segment_flows_lph"] == pytest.approx(
+        low["segment_flows_lph"]
+    )
+    assert high["segment_head_losses_m"] == pytest.approx(
+        low["segment_head_losses_m"]
+    )
+    assert [
+        high_pressure - low_pressure
+        for high_pressure, low_pressure in zip(
+            high["emitter_pressures_bar"],
+            low["emitter_pressures_bar"],
+        )
+    ] == pytest.approx([1.0] * 12)
+
+
 def test_reference_pressure_changes_calculated_emitter_flow():
     at_reference = analyze_non_compensating_dripline(**_base(reference_pressure_bar=2.0))
     lower_reference = analyze_non_compensating_dripline(**_base(reference_pressure_bar=1.0))
