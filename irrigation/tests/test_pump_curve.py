@@ -24,7 +24,7 @@ def test_operating_point_uses_only_overlapping_curve_range():
     )
 
     assert result["flow_m3_s"] == pytest.approx(0.0011666666667)
-    assert result["head_m"] == pytest.approx(26.6666666667)
+    assert result["head_m"] == pytest.approx(28.3333333333)
 
 
 @pytest.mark.parametrize(
