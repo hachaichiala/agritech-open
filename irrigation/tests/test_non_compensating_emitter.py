@@ -660,3 +660,41 @@ def test_solver_results_are_deterministic_for_identical_inputs():
     )
     assert second["iterations"] == first["iterations"]
 
+
+
+@pytest.mark.parametrize("elevation_offset_m", [1.0, -1.0])
+def test_uniform_elevation_offset_shifts_pressure_without_changing_fixed_emitter_flows(
+    elevation_offset_m,
+):
+    flat = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0)
+    )
+    shifted = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_elevations_m=[elevation_offset_m] * 12,
+        )
+    )
+
+    expected_pressure_shift_bar = -elevation_offset_m * 0.0980665
+
+    assert shifted["converged"] is True
+    assert shifted["emitter_flows_lph"] == pytest.approx(
+        flat["emitter_flows_lph"]
+    )
+    assert shifted["segment_flows_lph"] == pytest.approx(
+        flat["segment_flows_lph"]
+    )
+    assert shifted["segment_head_losses_m"] == pytest.approx(
+        flat["segment_head_losses_m"]
+    )
+    assert [
+        shifted_pressure - flat_pressure
+        for shifted_pressure, flat_pressure in zip(
+            shifted["emitter_pressures_bar"],
+            flat["emitter_pressures_bar"],
+        )
+    ] == pytest.approx([expected_pressure_shift_bar] * 12)
+    assert shifted["outlet_pressure_bar"] - flat["outlet_pressure_bar"] == pytest.approx(
+        expected_pressure_shift_bar
+    )
