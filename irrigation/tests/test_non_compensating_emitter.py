@@ -421,3 +421,54 @@ def test_larger_diameter_improves_coupled_emitter_flow_and_pressure():
         sum(larger["segment_head_losses_m"])
     )
 
+
+def test_more_emitters_at_fixed_spacing_increase_total_flow_and_head_loss():
+    standard = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0)
+    )
+    increased_count = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            number_of_emitters=24,
+            length_m=60.0,
+        )
+    )
+
+    assert increased_count["total_flow_lph"] == pytest.approx(
+        standard["total_flow_lph"] * 2.0
+    )
+    assert increased_count["segment_flows_lph"][0] == pytest.approx(
+        increased_count["total_flow_lph"]
+    )
+    assert increased_count["segment_flows_lph"] == pytest.approx(
+        [4.0 * count for count in range(24, 0, -1)]
+    )
+    assert increased_count["head_loss_m"] > standard["head_loss_m"]
+    assert increased_count["outlet_pressure_bar"] < standard["outlet_pressure_bar"]
+    assert increased_count["head_loss_m"] == pytest.approx(
+        sum(increased_count["segment_head_losses_m"])
+    )
+
+
+def test_closer_emitter_spacing_reduces_friction_loss_at_fixed_emitter_count():
+    standard = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0)
+    )
+    closer_spacing = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0, length_m=15.0)
+    )
+
+    assert closer_spacing["emitter_flows_lph"] == pytest.approx(
+        standard["emitter_flows_lph"]
+    )
+    assert closer_spacing["segment_flows_lph"] == pytest.approx(
+        standard["segment_flows_lph"]
+    )
+    assert closer_spacing["head_loss_m"] == pytest.approx(
+        standard["head_loss_m"] * 0.5, rel=1e-10
+    )
+    assert closer_spacing["outlet_pressure_bar"] > standard["outlet_pressure_bar"]
+    assert closer_spacing["head_loss_m"] == pytest.approx(
+        sum(closer_spacing["segment_head_losses_m"])
+    )
+
