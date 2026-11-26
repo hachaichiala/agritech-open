@@ -23,6 +23,7 @@ from .units import (
 
 from .dripline import (
     calculate_dripline_head_loss,
+    calculate_pressure_at_each_emitter,
 )
 
 from .emitter_pressure import (
@@ -30,4 +31,6 @@ from .emitter_pressure import (
     is_pressure_in_compensation_range,
     check_dripline_pressure,
     analyze_dripline_pressure,
+    analyze_emitter_pressure_distribution,
+    analyze_dripline_emitter_pressures,
 )
