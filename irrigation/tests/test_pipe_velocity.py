@@ -94,3 +94,27 @@ def test_calculation_rejects_boolean_infinite_and_unrepresentable_inputs(
 def test_rejects_non_finite_calculated_velocity():
     with pytest.raises(ValueError, match="velocity must be finite"):
         calculate_pipe_velocity(1e308, 1e-100)
+
+
+@pytest.mark.parametrize(
+    "minimum",
+    [0, -0.1, "0.6", 10**400],
+)
+def test_assessment_rejects_invalid_minimum_velocity(minimum):
+    with pytest.raises(ValueError, match="Minimum velocity"):
+        assess_pipe_velocity(0.001, 0.05, minimum, 1.5)
+
+
+@pytest.mark.parametrize(
+    "maximum",
+    [0, -0.1, "1.5", 10**400],
+)
+def test_assessment_rejects_invalid_maximum_velocity(maximum):
+    with pytest.raises(ValueError, match="Maximum velocity"):
+        assess_pipe_velocity(0.001, 0.05, 0.6, maximum)
+
+
+def test_assessment_rejects_equal_velocity_limits():
+    with pytest.raises(ValueError, match="lower than"):
+        assess_pipe_velocity(0.001, 0.05, 0.6, 0.6)
+
