@@ -34,6 +34,7 @@ from .emitter_pressure import (
     analyze_emitter_pressure_distribution,
     analyze_dripline_emitter_pressures,
     analyze_non_compensating_dripline,
+    analyze_emitter_flow_distribution,
 )
 
 from .manifold import (
