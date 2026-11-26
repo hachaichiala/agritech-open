@@ -101,3 +101,31 @@ def test_rejects_non_finite_calculated_power():
 def test_rejects_non_numeric_values():
     with pytest.raises(ValueError):
         calculate_pump_power("0.001", 10, 70)
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"water_density_kg_m3": 10**400},
+        {"gravity_m_s2": 10**400},
+    ],
+)
+def test_rejects_unrepresentable_integer_physical_constants(kwargs):
+    with pytest.raises(ValueError, match="finite number"):
+        calculate_pump_power(0.001, 10, 70, **kwargs)
+
+
+def test_accepts_full_efficiency_boundaries():
+    result = calculate_pump_power(
+        flow_m3_s=0.001,
+        head_m=10,
+        pump_efficiency_percent=100,
+        motor_efficiency_percent=100,
+    )
+
+    assert result["shaft_power_w"] == pytest.approx(
+        result["hydraulic_power_w"]
+    )
+    assert result["electrical_input_power_w"] == pytest.approx(
+        result["hydraulic_power_w"]
+    )
+
