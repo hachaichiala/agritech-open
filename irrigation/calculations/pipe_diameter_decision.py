@@ -32,6 +32,7 @@ def analyze_pipe_diameter_decision(
     minimum_velocity_m_s=0.6,
     maximum_velocity_m_s=1.5,
     pipe_specifications=None,
+    allow_unverified_pipe_specifications=False,
 ):
     """Run hydraulic, operating, economic, payback, and life-cycle analyses.
 
@@ -180,8 +181,11 @@ def analyze_pipe_diameter_decision(
             **velocity_result,
         })
         pressure_eligible = (
-            pipe_specifications is None
-            or pressure_result["within_rating"] is True
+            pressure_result["within_rating"] is True
+            or (
+                pipe_specifications is None
+                and allow_unverified_pipe_specifications is True
+            )
         )
         if velocity_result["status"] == "within_range" and pressure_eligible:
             life = lifecycle_by_diameter.get(diameter)
@@ -208,6 +212,7 @@ def analyze_pipe_diameter_decision(
         "basis": "lowest_net_present_life_cycle_cost_among_velocity_acceptable_diameters",
         "status": (
     "recommended" if best_lifecycle else
+    "unverified_pipe_specifications" if pipe_specifications is None and not allow_unverified_pipe_specifications else
     "no_feasible_diameter" if not successful else
     "no_pressure_compliant_diameter" if pipe_specifications is not None and pressure_compliant_count == 0 else
     "no_velocity_acceptable_diameter" if not eligible_lifecycle else
@@ -261,7 +266,7 @@ def analyze_pipe_diameter_decision(
             "The recommendation depends on user-supplied pump, pipe, tariff, and cost data.",
             "A recommendation is not a substitute for checking pressure ratings, water velocity, water hammer, and manufacturer limits.",
             "When manufacturer pipe specifications are supplied, only pressure-compliant candidates are eligible for recommendation; candidate diameters must match calculated internal diameters.",
-            "Without manufacturer pipe specifications, pressure suitability is unverified and the legacy diameter-only recommendation path is retained for compatibility.",
+            "Without manufacturer pipe specifications, no recommendation is issued unless allow_unverified_pipe_specifications is explicitly enabled for a legacy diameter-only workflow.",
         ],
         "missing_or_unverified_inputs": missing_data,
         "method": "integrated_hydraulic_economic_payback_sensitivity_and_life_cycle_decision",
