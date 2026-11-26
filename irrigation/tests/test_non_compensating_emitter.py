@@ -802,3 +802,56 @@ def test_non_monotonic_elevation_profile_applies_each_emitter_elevation_independ
     assert result["head_loss_m"] == pytest.approx(
         sum(result["segment_head_losses_m"])
     )
+
+
+def test_permuting_elevation_profile_preserves_fixed_flow_hydraulics():
+    elevations_m = [
+        -0.2, 0.0, 0.15, 0.4, 0.25, 0.7,
+        0.5, 0.9, 0.1, 0.6, 0.3, 0.8,
+    ]
+    permuted_elevations_m = list(reversed(elevations_m))
+
+    original = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_elevations_m=elevations_m,
+        )
+    )
+    permuted = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_elevations_m=permuted_elevations_m,
+        )
+    )
+    flat = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0)
+    )
+
+    assert original["converged"] is True
+    assert permuted["converged"] is True
+    assert permuted["emitter_flows_lph"] == pytest.approx(
+        original["emitter_flows_lph"]
+    )
+    assert permuted["segment_flows_lph"] == pytest.approx(
+        original["segment_flows_lph"]
+    )
+    assert permuted["segment_head_losses_m"] == pytest.approx(
+        original["segment_head_losses_m"]
+    )
+    assert permuted["head_loss_m"] == pytest.approx(original["head_loss_m"])
+    assert permuted["total_flow_lph"] == pytest.approx(original["total_flow_lph"])
+
+    for result, profile in (
+        (original, elevations_m),
+        (permuted, permuted_elevations_m),
+    ):
+        expected_pressures = [
+            flat_pressure - elevation_m * 0.0980665
+            for flat_pressure, elevation_m in zip(
+                flat["emitter_pressures_bar"], profile
+            )
+        ]
+        assert result["emitter_pressures_bar"] == pytest.approx(
+            expected_pressures
+        )
+
