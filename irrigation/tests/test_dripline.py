@@ -286,3 +286,17 @@ def test_higher_emitter_flow_reduces_pressure_at_first_and_last_emitters():
     assert high_flow_pressures[0] < low_flow_pressures[0]
     assert high_flow_pressures[-1] < low_flow_pressures[-1]
 
+def test_reference_100m_lateral_with_200_emitters():
+    """Check a practical reference case for a 100 m, 16 mm lateral."""
+    head_loss_m = calculate_dripline_head_loss(
+        length_m=100,
+        number_of_emitters=200,
+        emitter_flow_lph=2,
+        diameter_m=0.016,
+        hazen_williams_c=150,
+    )
+
+    assert head_loss_m == pytest.approx(0.9342403, rel=1e-6)
+    assert head_loss_m * 0.0980665 == pytest.approx(
+        0.0916177, rel=1e-6
+    )
