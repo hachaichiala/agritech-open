@@ -48,7 +48,12 @@ def calculate_manifold_total_flow(
     _validate_positive_finite(lateral_flow_lph, "Lateral flow rate")
 
     total_flow_lph = number_of_laterals * lateral_flow_lph
-    if not math.isfinite(total_flow_lph):
+    try:
+        finite_total_flow = math.isfinite(total_flow_lph)
+    except OverflowError:
+        finite_total_flow = False
+
+    if not finite_total_flow:
         raise ValueError("Calculated manifold flow must be finite.")
 
     return total_flow_lph
