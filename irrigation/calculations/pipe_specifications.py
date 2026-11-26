@@ -8,13 +8,15 @@ import math
 
 
 def _positive_finite(value, name):
-    if (
-        not isinstance(value, (int, float))
-        or isinstance(value, bool)
-        or not math.isfinite(value)
-        or value <= 0
-    ):
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{name} must be a positive finite number.")
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError(f"{name} must be a positive finite number.") from None
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError(f"{name} must be a positive finite number.")
+    return number
 
 
 def calculate_pipe_internal_diameter(
