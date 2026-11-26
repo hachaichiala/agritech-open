@@ -1,4 +1,7 @@
 from irrigation.calculations.dripline import (
+    calculate_pressure_at_each_emitter,
+)
+from irrigation.calculations.dripline import (
     calculate_dripline_segment_head_losses,
 )
 import pytest
@@ -135,4 +138,73 @@ def test_segment_losses_decrease_along_dripline():
     )
 
     assert losses[0] > losses[1] > losses[2]
+
+def test_pressure_at_each_emitter_count():
+    pressures = calculate_pressure_at_each_emitter(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert len(pressures) == 3
+
+
+def test_pressure_decreases_along_dripline():
+    pressures = calculate_pressure_at_each_emitter(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert pressures[0] > pressures[1] > pressures[2]
+
+
+def test_first_emitter_pressure():
+    pressures = calculate_pressure_at_each_emitter(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert pressures[0] == pytest.approx(
+        1.999949, rel=1e-4
+    )
+
+
+def test_last_emitter_pressure_matches_total_loss():
+    pressures = calculate_pressure_at_each_emitter(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    total_loss = calculate_dripline_head_loss(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    expected_pressure = 2.0 - total_loss * 0.0980665
+
+    assert pressures[-1] == pytest.approx(expected_pressure)
+
+
+def test_invalid_inlet_pressure():
+    with pytest.raises(ValueError):
+        calculate_pressure_at_each_emitter(
+            inlet_pressure_bar=0,
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+        )
 
