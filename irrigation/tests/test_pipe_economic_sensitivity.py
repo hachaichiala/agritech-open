@@ -29,7 +29,7 @@ def _analyze(cases=None):
         electricity_cost_tnd_per_kwh=0.2, operating_hours_per_day=4,
         operating_days_per_year=300, analysis_period_years=5,
         motor_efficiency_percent=90,
-        sensitivity_cases=cases or [
+        sensitivity_cases=cases if cases is not None else [
             {"name": "baseline", "overrides": {}},
             {"name": "higher tariff", "overrides": {"electricity_cost_tnd_per_kwh": 0.3}},
         ],
