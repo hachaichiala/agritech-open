@@ -63,3 +63,24 @@ def test_zero_length():
 def test_invalid_diameter():
     with pytest.raises(ValueError):
         calculate_dripline_head_loss(20, 2, 8, 0)
+        
+@pytest.mark.parametrize(
+    "length, emitter_flow",
+    [
+        (True, 8),
+        (float("inf"), 8),
+        (float("nan"), 8),
+        (20, True),
+        (20, float("inf")),
+        (20, float("nan")),
+    ],
+)
+def test_invalid_length_and_emitter_flow(length, emitter_flow):
+    with pytest.raises(ValueError):
+        calculate_dripline_head_loss(
+            length_m=length,
+            number_of_emitters=2,
+            emitter_flow_lph=emitter_flow,
+            diameter_m=0.016,
+        )
+
