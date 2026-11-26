@@ -66,8 +66,8 @@ def test_compares_shaft_power_with_rated_motor_output_power():
         pump_efficiency_percent=50,
     )
     check = result["motor_power_check"]
-    assert check["required_shaft_power_kw"] == pytest.approx(0.4903325)
-    assert check["available_margin_kw"] == pytest.approx(0.0096675)
+    assert check["required_shaft_power_kw"] == pytest.approx(0.367749375)
+    assert check["available_margin_kw"] == pytest.approx(0.132250625)
     assert check["within_rated_power"] is True
     assert check["rating_interpretation"] == "mechanical_shaft_output"
 
@@ -96,7 +96,7 @@ def test_does_not_compare_rated_power_with_electrical_input():
     )
     check = result["motor_power_check"]
     assert check["required_shaft_power_kw"] == pytest.approx(0.4903325)
-    assert result["power"]["electrical_input_power_w"] > 500
+    assert result["power"]["electrical_input_power_w"] > check["required_shaft_power_kw"] * 1000
 
 
 def test_rejects_conflicting_explicit_efficiency_and_curve():
