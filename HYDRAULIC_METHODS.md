@@ -30,8 +30,8 @@ The current lateral model divides the lateral into equal-length segments. It ass
 - The final emitter is located at the downstream end.
 - Each emitter discharges the same nominal flow.
 - The segment flow equals the sum of the nominal flows from that segment's emitter and all downstream emitters.
-- The lateral is horizontal.
 - Pipe internal diameter is constant.
+- The detailed pressure-distribution functions accept an optional elevation for each emitter, measured relative to the lateral inlet. If no elevation profile is supplied, the lateral is treated as horizontal.
 
 For each segment, the engine applies Hazen-Williams to the remaining downstream flow, then sums segment losses. Pressure at each emitter is calculated by accumulating the segment losses from the inlet.
 
