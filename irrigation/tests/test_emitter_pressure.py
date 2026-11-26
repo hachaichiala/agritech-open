@@ -455,3 +455,54 @@ def test_emitter_pressure_analysis_accounts_for_lateral_elevation():
     assert uphill["emitter_pressures_bar"][-1] == pytest.approx(
         horizontal["emitter_pressures_bar"][-1] - 1.5 * 0.0980665
     )
+
+
+
+def test_analyze_dripline_pressure_accounts_for_uphill_elevation():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+    horizontal = analyze_dripline_pressure(**common)
+    uphill = analyze_dripline_pressure(
+        **common, emitter_elevations_m=[0.5, 1.0, 1.5]
+    )
+    assert uphill["head_loss_m"] == pytest.approx(horizontal["head_loss_m"])
+    assert uphill["outlet_pressure_bar"] == pytest.approx(
+        horizontal["outlet_pressure_bar"] - 1.5 * 0.0980665
+    )
+    assert uphill["pressure_head_change_m"] > horizontal["pressure_head_change_m"]
+
+
+def test_analyze_dripline_pressure_accounts_for_downhill_elevation():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+    horizontal = analyze_dripline_pressure(**common)
+    downhill = analyze_dripline_pressure(
+        **common, emitter_elevations_m=[-0.5, -1.0, -1.5]
+    )
+    assert downhill["outlet_pressure_bar"] > horizontal["outlet_pressure_bar"]
+    assert downhill["pressure_head_change_m"] < horizontal["pressure_head_change_m"]
+
+
+def test_analyze_dripline_pressure_rejects_invalid_elevation_profile():
+    with pytest.raises(ValueError, match="Emitter elevations"):
+        analyze_dripline_pressure(
+            inlet_pressure_bar=2.0,
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            pressure_range=EmitterPressureRange(),
+            emitter_elevations_m=[0.0, 1.0],
+        )
