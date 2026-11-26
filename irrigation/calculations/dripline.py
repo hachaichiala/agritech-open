@@ -3,6 +3,8 @@
 Pressure loss calculations for drip irrigation laterals.
 """
 
+import math
+
 from .pressure_loss import calculate_hazen_williams_head_loss
 from .units import liters_per_hour_to_cubic_meters_per_second
 
@@ -15,15 +17,23 @@ def calculate_dripline_head_loss(
     hazen_williams_c: float = 150,
 ) -> float:
     """
-    Calculate total friction head loss along a dripline.
+    Calculate friction head loss along a dripline.
 
-    Emitters are assumed to be uniformly spaced.
-    Flow is assumed to decrease after each emitter.
-    The pipe is assumed to be horizontal.
+    Emitters are uniformly spaced.
+    Each segment ends at an emitter.
+    Flow decreases after each emitter.
 
     Returns:
-        Total friction head loss in meters of water column.
+        Total head loss in meters of water column.
     """
+
+    if (
+        not isinstance(length_m, (int, float))
+        or isinstance(length_m, bool)
+        or not math.isfinite(length_m)
+        or length_m <= 0
+    ):
+        raise ValueError("Length must be a positive finite number.")
 
     if (
         not isinstance(number_of_emitters, int)
@@ -32,18 +42,19 @@ def calculate_dripline_head_loss(
     ):
         raise ValueError("Number of emitters must be a positive integer.")
 
-    total_length = length_m
+    if (
+        not isinstance(emitter_flow_lph, (int, float))
+        or isinstance(emitter_flow_lph, bool)
+        or not math.isfinite(emitter_flow_lph)
+        or emitter_flow_lph <= 0
+    ):
+        raise ValueError("Emitter flow must be a positive finite number.")
 
-    if total_length <= 0:
-        raise ValueError("Length must be positive.")
-
-    segment_length = total_length / number_of_emitters
-
+    segment_length = length_m / number_of_emitters
     total_head_loss = 0.0
 
     for index in range(number_of_emitters):
         remaining_emitters = number_of_emitters - index
-
         flow_lph = remaining_emitters * emitter_flow_lph
 
         flow_m3_s = liters_per_hour_to_cubic_meters_per_second(
