@@ -879,3 +879,48 @@ def test_single_emitter_has_one_segment_and_balanced_flow():
         sum(result["segment_head_losses_m"])
     )
 
+def test_two_emitters_balance_flow_across_two_segments():
+    import math
+
+    result = analyze_non_compensating_dripline(
+        **_base(
+            number_of_emitters=2,
+            discharge_exponent=0.0,
+            emitter_connection_k=0.0,
+        )
+    )
+
+    assert result["converged"] is True
+    assert result["emitter_flows_lph"] == pytest.approx([4.0, 4.0])
+    assert result["segment_flows_lph"] == pytest.approx([8.0, 4.0])
+    assert result["total_flow_lph"] == pytest.approx(8.0)
+    assert len(result["segment_head_losses_m"]) == 2
+
+    area_m2 = math.pi * 0.020 ** 2 / 4.0
+    expected_segment_losses_m = []
+    for flow_lph in (8.0, 4.0):
+        flow_m3_s = flow_lph / 3_600_000.0
+        expected_segment_losses_m.append(
+            10.67
+            * (30.0 / 2)
+            * flow_m3_s ** 1.852
+            / (150.0 ** 1.852 * 0.020 ** 4.871)
+        )
+
+    assert result["segment_head_losses_m"] == pytest.approx(
+        expected_segment_losses_m, rel=1e-10
+    )
+    assert result["head_loss_m"] == pytest.approx(
+        sum(expected_segment_losses_m), rel=1e-10
+    )
+    assert result["emitter_pressures_bar"] == pytest.approx(
+        [
+            2.0 - expected_segment_losses_m[0] * 0.0980665,
+            2.0 - sum(expected_segment_losses_m) * 0.0980665,
+        ],
+        rel=1e-10,
+    )
+    assert result["outlet_pressure_bar"] == pytest.approx(
+        result["emitter_pressures_bar"][-1]
+    )
+
