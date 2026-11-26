@@ -538,3 +538,73 @@ def test_emitter_connection_k_adds_expected_minor_head_loss():
         sum(with_connection_loss["segment_head_losses_m"])
     )
 
+
+def test_tighter_solver_tolerance_stabilizes_emitter_flows_and_pressures():
+    loose = analyze_non_compensating_dripline(
+        **_base(tolerance=1e-6, max_iterations=1000)
+    )
+    tight = analyze_non_compensating_dripline(
+        **_base(tolerance=1e-10, max_iterations=1000)
+    )
+    reference = analyze_non_compensating_dripline(
+        **_base(tolerance=1e-12, max_iterations=2000)
+    )
+
+    loose_flow_error = max(
+        abs(value - reference_value)
+        for value, reference_value in zip(
+            loose["emitter_flows_lph"], reference["emitter_flows_lph"]
+        )
+    )
+    tight_flow_error = max(
+        abs(value - reference_value)
+        for value, reference_value in zip(
+            tight["emitter_flows_lph"], reference["emitter_flows_lph"]
+        )
+    )
+    loose_pressure_error = max(
+        abs(value - reference_value)
+        for value, reference_value in zip(
+            loose["emitter_pressures_bar"], reference["emitter_pressures_bar"]
+        )
+    )
+    tight_pressure_error = max(
+        abs(value - reference_value)
+        for value, reference_value in zip(
+            tight["emitter_pressures_bar"], reference["emitter_pressures_bar"]
+        )
+    )
+
+    assert loose["converged"] is True
+    assert tight["converged"] is True
+    assert reference["converged"] is True
+    assert tight["iterations"] >= loose["iterations"]
+    assert tight_flow_error <= loose_flow_error
+    assert tight_pressure_error <= loose_pressure_error
+    assert tight["total_flow_lph"] == pytest.approx(
+        sum(tight["emitter_flows_lph"])
+    )
+
+
+def test_solver_results_are_deterministic_for_identical_inputs():
+    first = analyze_non_compensating_dripline(
+        **_base(tolerance=1e-9)
+    )
+    second = analyze_non_compensating_dripline(
+        **_base(tolerance=1e-9)
+    )
+
+    assert second["emitter_flows_lph"] == pytest.approx(
+        first["emitter_flows_lph"], rel=0.0, abs=0.0
+    )
+    assert second["emitter_pressures_bar"] == pytest.approx(
+        first["emitter_pressures_bar"], rel=0.0, abs=0.0
+    )
+    assert second["segment_flows_lph"] == pytest.approx(
+        first["segment_flows_lph"], rel=0.0, abs=0.0
+    )
+    assert second["segment_head_losses_m"] == pytest.approx(
+        first["segment_head_losses_m"], rel=0.0, abs=0.0
+    )
+    assert second["iterations"] == first["iterations"]
+
