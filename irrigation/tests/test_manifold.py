@@ -109,3 +109,105 @@ def test_manifold_head_loss_rejects_invalid_inputs(
             lateral_flow_lph=lateral_flow,
             diameter_m=diameter,
         )
+
+
+
+def test_manifold_segment_losses_match_total_head_loss():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    segment_losses = calculate_manifold_segment_head_losses(
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+    total_loss = calculate_manifold_head_loss(
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    assert len(segment_losses) == 4
+    assert all(loss > 0 for loss in segment_losses)
+    assert sum(segment_losses) == pytest.approx(total_loss)
+
+
+def test_manifold_segment_losses_decrease_after_each_takeoff():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    segment_losses = calculate_manifold_segment_head_losses(
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    assert all(
+        earlier > later
+        for earlier, later in zip(segment_losses, segment_losses[1:])
+    )
+
+
+def test_single_lateral_has_one_manifold_segment():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    losses = calculate_manifold_segment_head_losses(
+        length_m=30,
+        number_of_laterals=1,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    assert len(losses) == 1
+    assert losses[0] == pytest.approx(
+        calculate_manifold_head_loss(
+            length_m=30,
+            number_of_laterals=1,
+            lateral_flow_lph=800,
+            diameter_m=0.04,
+            hazen_williams_c=150,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "length, number_of_laterals, lateral_flow, diameter, coefficient",
+    [
+        (0, 4, 800, 0.04, 150),
+        (30, 0, 800, 0.04, 150),
+        (30, 4, 0, 0.04, 150),
+        (30, 4, 800, 0, 150),
+        (30, 4, 800, 0.04, 0),
+        (30, True, 800, 0.04, 150),
+    ],
+)
+def test_manifold_segment_losses_reject_invalid_inputs(
+    length,
+    number_of_laterals,
+    lateral_flow,
+    diameter,
+    coefficient,
+):
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    with pytest.raises(ValueError):
+        calculate_manifold_segment_head_losses(
+            length_m=length,
+            number_of_laterals=number_of_laterals,
+            lateral_flow_lph=lateral_flow,
+            diameter_m=diameter,
+            hazen_williams_c=coefficient,
+        )
