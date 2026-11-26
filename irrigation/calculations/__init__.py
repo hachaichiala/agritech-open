@@ -60,3 +60,7 @@ from .pump_head import (
 from .pump_data import (
     validate_pump_data,
 )
+
+from .pump_power import (
+    calculate_pump_power,
+)
