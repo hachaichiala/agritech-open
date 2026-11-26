@@ -130,3 +130,80 @@ def test_returns_no_recommendation_when_all_velocities_are_too_low():
 def test_rejects_invalid_velocity_range():
     with pytest.raises(ValueError, match="lower than"):
         _analyze(minimum_velocity_m_s=1.5, maximum_velocity_m_s=0.6)
+
+
+def _pipe_specs(first_design=5, second_design=5):
+    return [
+        {
+            "pipe_diameter_m": 0.04,
+            "outside_diameter_m": 0.05,
+            "wall_thickness_m": 0.005,
+            "design_pressure_bar": first_design,
+            "rated_pressure_bar": 6,
+            "material": "PE",
+        },
+        {
+            "pipe_diameter_m": 0.063,
+            "outside_diameter_m": 0.07,
+            "wall_thickness_m": 0.0035,
+            "design_pressure_bar": second_design,
+            "rated_pressure_bar": 6,
+            "material": "PVC",
+        },
+    ]
+
+
+def test_pressure_compliant_pipes_remain_eligible_for_recommendation():
+    result = _analyze(pipe_specifications=_pipe_specs())
+    assert result["pipe_specifications_verified"] is True
+    assert all(item["within_rating"] for item in result["pressure_assessments"])
+    assert result["recommendation"]["status"] == "recommended"
+
+
+def test_pipe_exceeding_pressure_rating_is_excluded_from_recommendation():
+    result = _analyze(pipe_specifications=_pipe_specs(second_design=8))
+    failed = next(
+        item for item in result["pressure_assessments"]
+        if item["pipe_diameter_m"] == 0.063
+    )
+    assert failed["status"] == "exceeds_rating"
+    assert result["recommendation"]["pipe_diameter_m"] != 0.063
+
+
+def test_no_pressure_compliant_pipe_produces_no_recommendation():
+    result = _analyze(
+        pipe_specifications=_pipe_specs(first_design=8, second_design=9)
+    )
+    assert result["recommendation"]["status"] == "no_pressure_compliant_diameter"
+    assert result["recommendation"]["pipe_diameter_m"] is None
+
+
+def test_velocity_uses_manufacturer_calculated_internal_diameter():
+    result = _analyze(pipe_specifications=_pipe_specs())
+    for item in result["velocity_assessments"]:
+        specification = next(
+            spec for spec in _pipe_specs()
+            if spec["pipe_diameter_m"] == item["pipe_diameter_m"]
+        )
+        expected = specification["outside_diameter_m"] - 2 * specification["wall_thickness_m"]
+        assert item["internal_diameter_m"] == pytest.approx(expected)
+
+
+def test_missing_manufacturer_specifications_are_reported_as_unverified():
+    result = _analyze()
+    assert result["pipe_specifications_verified"] is False
+    assert all(
+        item["status"] == "not_provided"
+        for item in result["pressure_assessments"]
+    )
+    assert any(
+        "pressure suitability is unverified" in item
+        for item in result["missing_or_unverified_inputs"]
+    )
+
+
+def test_specification_diameter_must_match_calculated_internal_diameter():
+    specs = _pipe_specs()
+    specs[0]["pipe_diameter_m"] = 0.041
+    with pytest.raises(ValueError, match="calculated manufacturer internal diameter"):
+        _analyze(pipe_specifications=specs)
