@@ -76,3 +76,52 @@ def calculate_hazen_williams_head_loss(
         )
 
     return head_loss
+
+
+def calculate_minor_head_loss(
+    flow_m3_s: float,
+    diameter_m: float,
+    loss_coefficient: float,
+    gravity_m_s2: float = 9.80665,
+) -> float:
+    """
+    Calculate local fitting loss using h_m = K * V^2 / (2g).
+
+    Flow is the flow immediately upstream of the fitting.
+    K is specific to the fitting geometry and flow conditions.
+    """
+    flow_m3_s = _finite_number(flow_m3_s, "Flow rate")
+    diameter_m = _finite_number(diameter_m, "Diameter")
+    loss_coefficient = _finite_number(
+        loss_coefficient, "Local loss coefficient"
+    )
+    gravity_m_s2 = _finite_number(gravity_m_s2, "Gravity")
+
+    if flow_m3_s < 0:
+        raise ValueError("Flow rate cannot be negative.")
+    if diameter_m <= 0:
+        raise ValueError("Diameter must be positive.")
+    if loss_coefficient < 0:
+        raise ValueError("Local loss coefficient cannot be negative.")
+    if gravity_m_s2 <= 0:
+        raise ValueError("Gravity must be positive.")
+    if flow_m3_s == 0 or loss_coefficient == 0:
+        return 0.0
+
+    area_m2 = math.pi * diameter_m ** 2 / 4.0
+    velocity_m_s = flow_m3_s / area_m2
+    try:
+        head_loss_m = (
+            loss_coefficient * velocity_m_s ** 2
+            / (2.0 * gravity_m_s2)
+        )
+    except (OverflowError, ZeroDivisionError):
+        raise ValueError(
+            "Calculated local head loss must be a finite number."
+        ) from None
+
+    if not math.isfinite(head_loss_m):
+        raise ValueError(
+            "Calculated local head loss must be a finite number."
+        )
+    return head_loss_m
