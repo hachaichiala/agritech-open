@@ -96,6 +96,15 @@ def analyze_irrigation_sector(
         })
 
     total_emitters = len(all_emitter_pressures_bar)
+    lateral_inlet_pressures = [
+        lateral["inlet_pressure_bar"] for lateral in laterals
+    ]
+    lateral_outlet_pressures = [
+        lateral["outlet_pressure_bar"] for lateral in laterals
+    ]
+    lateral_head_losses = [
+        lateral["head_loss_m"] for lateral in laterals
+    ]
     emitters_within_range = sum(
         pressure_range.minimum_bar <= pressure <= pressure_range.maximum_bar
         for pressure in all_emitter_pressures_bar
@@ -110,6 +119,12 @@ def analyze_irrigation_sector(
         "lateral_flow_lph": lateral_flow_lph,
         "manifold_head_loss_m": manifold_head_loss_m,
         "lateral_inlet_pressures_bar": lateral_inlet_pressures_bar,
+        "minimum_lateral_inlet_pressure_bar": min(lateral_inlet_pressures),
+        "maximum_lateral_inlet_pressure_bar": max(lateral_inlet_pressures),
+        "minimum_lateral_outlet_pressure_bar": min(lateral_outlet_pressures),
+        "maximum_lateral_outlet_pressure_bar": max(lateral_outlet_pressures),
+        "minimum_lateral_head_loss_m": min(lateral_head_losses),
+        "maximum_lateral_head_loss_m": max(lateral_head_losses),
         "laterals": laterals,
         "total_emitters": total_emitters,
         "emitters_within_range": emitters_within_range,
