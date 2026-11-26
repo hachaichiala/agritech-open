@@ -317,3 +317,189 @@ def analyze_dripline_emitter_pressures(
             and distribution["all_emitters_within_range"]
         ),
     }
+
+
+def analyze_non_compensating_dripline(
+    inlet_pressure_bar: float,
+    length_m: float,
+    number_of_emitters: int,
+    reference_flow_lph: float,
+    reference_pressure_bar: float,
+    discharge_exponent: float,
+    diameter_m: float,
+    hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
+    emitter_elevations_m: list | None = None,
+    tolerance: float = 1e-8,
+    max_iterations: int = 500,
+) -> dict:
+    """
+    Solve a non-pressure-compensating lateral using q = q_ref*(P/P_ref)^x.
+
+    All emitter curve parameters must come from the emitter manufacturer.
+    The iteration updates emitter flows from local pressures, then recomputes
+    each segment flow from the sum of its emitter and all downstream flows.
+    """
+    from .pressure_loss import (
+        calculate_hazen_williams_head_loss,
+        calculate_minor_head_loss,
+    )
+    from .units import liters_per_hour_to_cubic_meters_per_second
+
+    numeric_inputs = {
+        "Inlet pressure": inlet_pressure_bar,
+        "Reference emitter flow": reference_flow_lph,
+        "Reference pressure": reference_pressure_bar,
+        "Discharge exponent": discharge_exponent,
+        "Length": length_m,
+        "Diameter": diameter_m,
+        "Hazen-Williams coefficient": hazen_williams_c,
+        "Emitter connection K": emitter_connection_k,
+        "Tolerance": tolerance,
+    }
+    normalized = {}
+    for name, value in numeric_inputs.items():
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise ValueError(f"{name} must be a finite number.")
+        try:
+            value = float(value)
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError(f"{name} must be a finite number.") from None
+        if not math.isfinite(value):
+            raise ValueError(f"{name} must be a finite number.")
+        normalized[name] = value
+
+    inlet_pressure_bar = normalized["Inlet pressure"]
+    reference_flow_lph = normalized["Reference emitter flow"]
+    reference_pressure_bar = normalized["Reference pressure"]
+    discharge_exponent = normalized["Discharge exponent"]
+    length_m = normalized["Length"]
+    diameter_m = normalized["Diameter"]
+    hazen_williams_c = normalized["Hazen-Williams coefficient"]
+    emitter_connection_k = normalized["Emitter connection K"]
+    tolerance = normalized["Tolerance"]
+
+    if inlet_pressure_bar <= 0 or reference_flow_lph <= 0:
+        raise ValueError("Inlet pressure and reference flow must be positive.")
+    if reference_pressure_bar <= 0:
+        raise ValueError("Reference pressure must be positive.")
+    if discharge_exponent < 0:
+        raise ValueError("Discharge exponent cannot be negative.")
+    if length_m <= 0 or diameter_m <= 0 or hazen_williams_c <= 0:
+        raise ValueError("Length, diameter, and Hazen-Williams C must be positive.")
+    if emitter_connection_k < 0:
+        raise ValueError("Emitter connection K cannot be negative.")
+    if tolerance <= 0:
+        raise ValueError("Tolerance must be positive.")
+    if (
+        not isinstance(number_of_emitters, int)
+        or isinstance(number_of_emitters, bool)
+        or number_of_emitters <= 0
+    ):
+        raise ValueError("Number of emitters must be a positive integer.")
+    if (
+        not isinstance(max_iterations, int)
+        or isinstance(max_iterations, bool)
+        or max_iterations <= 0
+    ):
+        raise ValueError("Maximum iterations must be a positive integer.")
+
+    if emitter_elevations_m is None:
+        elevations = [0.0] * number_of_emitters
+    else:
+        if (
+            not isinstance(emitter_elevations_m, (list, tuple))
+            or len(emitter_elevations_m) != number_of_emitters
+        ):
+            raise ValueError("Emitter elevations must contain one value per emitter.")
+        elevations = []
+        for elevation in emitter_elevations_m:
+            if (
+                not isinstance(elevation, (int, float))
+                or isinstance(elevation, bool)
+                or not math.isfinite(elevation)
+            ):
+                raise ValueError("Emitter elevations must be finite numbers.")
+            elevations.append(float(elevation))
+
+    segment_length = length_m / number_of_emitters
+
+    def hydraulic_state(flows_lph):
+        pressures = []
+        segment_losses = []
+        cumulative_loss = 0.0
+        for index, flow in enumerate(flows_lph):
+            downstream_flow_lph = sum(flows_lph[index:])
+            flow_m3_s = liters_per_hour_to_cubic_meters_per_second(
+                downstream_flow_lph
+            )
+            friction = calculate_hazen_williams_head_loss(
+                segment_length, flow_m3_s, diameter_m, hazen_williams_c
+            )
+            local = calculate_minor_head_loss(
+                flow_m3_s, diameter_m, emitter_connection_k
+            )
+            segment_loss = friction + local
+            segment_losses.append(segment_loss)
+            cumulative_loss += segment_loss
+            pressure_head_change = cumulative_loss + elevations[index]
+            pressure = (
+                inlet_pressure_bar
+                - pressure_head_change * BAR_PER_METER_WATER
+            )
+            if not math.isfinite(pressure) or pressure <= 0:
+                raise ValueError(
+                    "Pressure reaches zero or below. Check inlet pressure, "
+                    "lateral dimensions, emitter data, and elevations."
+                )
+            pressures.append(pressure)
+        return pressures, segment_losses
+
+    flows = [reference_flow_lph] * number_of_emitters
+    converged = False
+    iteration_count = 0
+
+    for iteration_count in range(1, max_iterations + 1):
+        pressures, _ = hydraulic_state(flows)
+        target_flows = [
+            reference_flow_lph
+            * (pressure / reference_pressure_bar) ** discharge_exponent
+            for pressure in pressures
+        ]
+        if any(not math.isfinite(flow) or flow <= 0 for flow in target_flows):
+            raise ValueError("Calculated emitter flows must be positive and finite.")
+        relative_change = max(
+            abs(new - old) / max(abs(new), 1e-12)
+            for new, old in zip(target_flows, flows)
+        )
+        if relative_change <= tolerance:
+            flows = target_flows
+            converged = True
+            break
+        flows = [
+            0.5 * old + 0.5 * new
+            for old, new in zip(flows, target_flows)
+        ]
+
+    if not converged:
+        raise ValueError(
+            f"Emitter flow calculation did not converge within {max_iterations} iterations."
+        )
+
+    pressures, segment_losses = hydraulic_state(flows)
+    total_head_loss = sum(segment_losses)
+    total_flow_lph = sum(flows)
+    return {
+        "emitter_flows_lph": flows,
+        "emitter_pressures_bar": pressures,
+        "segment_head_losses_m": segment_losses,
+        "head_loss_m": total_head_loss,
+        "inlet_pressure_bar": inlet_pressure_bar,
+        "outlet_pressure_bar": pressures[-1],
+        "total_flow_lph": total_flow_lph,
+        "iterations": iteration_count,
+        "converged": True,
+        "maximum_flow_lph": max(flows),
+        "minimum_flow_lph": min(flows),
+        "flow_uniformity_percentage": min(flows) / max(flows) * 100.0,
+    }
