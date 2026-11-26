@@ -100,3 +100,31 @@ def test_reports_unverified_inputs():
 def test_invalid_lifecycle_input_is_rejected():
     with pytest.raises(ValueError, match="Discount rate"):
         _analyze(discount_rate_percent=-1)
+
+
+
+def test_recommendation_excludes_diameters_outside_velocity_range():
+    result = _analyze(minimum_velocity_m_s=0.7, maximum_velocity_m_s=1.0)
+    assessments = result["velocity_assessments"]
+    assert len(assessments) == 2
+    assert all(item["status"] in {"below_minimum", "within_range", "above_maximum"} for item in assessments)
+    acceptable = {
+        item["pipe_diameter_m"]
+        for item in assessments
+        if item["status"] == "within_range"
+    }
+    if acceptable:
+        assert result["recommendation"]["pipe_diameter_m"] in acceptable
+    else:
+        assert result["recommendation"]["status"] == "no_velocity_acceptable_diameter"
+
+
+def test_returns_no_recommendation_when_all_velocities_are_too_low():
+    result = _analyze(minimum_velocity_m_s=100.0, maximum_velocity_m_s=200.0)
+    assert result["recommendation"]["status"] == "no_velocity_acceptable_diameter"
+    assert result["recommendation"]["pipe_diameter_m"] is None
+
+
+def test_rejects_invalid_velocity_range():
+    with pytest.raises(ValueError, match="lower than"):
+        _analyze(minimum_velocity_m_s=1.5, maximum_velocity_m_s=0.6)
