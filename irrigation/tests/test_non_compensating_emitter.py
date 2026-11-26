@@ -472,3 +472,69 @@ def test_closer_emitter_spacing_reduces_friction_loss_at_fixed_emitter_count():
         sum(closer_spacing["segment_head_losses_m"])
     )
 
+
+def test_higher_hazen_williams_coefficient_reduces_friction_loss():
+    standard_c = 150.0
+    smoother_pipe_c = 160.0
+    common = _base(
+        discharge_exponent=0.0,
+        emitter_connection_k=0.0,
+        hazen_williams_c=standard_c,
+    )
+    standard = analyze_non_compensating_dripline(**common)
+    smoother_pipe = analyze_non_compensating_dripline(
+        **{**common, "hazen_williams_c": smoother_pipe_c}
+    )
+
+    expected_loss_ratio = (standard_c / smoother_pipe_c) ** 1.852
+
+    assert smoother_pipe["emitter_flows_lph"] == pytest.approx(
+        standard["emitter_flows_lph"]
+    )
+    assert smoother_pipe["head_loss_m"] / standard["head_loss_m"] == pytest.approx(
+        expected_loss_ratio, rel=1e-10
+    )
+    assert smoother_pipe["outlet_pressure_bar"] > standard["outlet_pressure_bar"]
+    assert smoother_pipe["head_loss_m"] == pytest.approx(
+        sum(smoother_pipe["segment_head_losses_m"])
+    )
+
+
+def test_emitter_connection_k_adds_expected_minor_head_loss():
+    connection_k = 0.75
+    no_connection_loss = analyze_non_compensating_dripline(
+        **_base(discharge_exponent=0.0, emitter_connection_k=0.0)
+    )
+    with_connection_loss = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_connection_k=connection_k,
+        )
+    )
+
+    import math
+
+    diameter_m = 0.020
+    area_m2 = math.pi * diameter_m ** 2 / 4.0
+    expected_minor_loss_m = 0.0
+    for count in range(12, 0, -1):
+        flow_m3_s = (4.0 * count) / 3_600_000.0
+        velocity_m_s = flow_m3_s / area_m2
+        expected_minor_loss_m += (
+            connection_k * velocity_m_s ** 2 / (2.0 * 9.80665)
+        )
+
+    assert with_connection_loss["emitter_flows_lph"] == pytest.approx(
+        no_connection_loss["emitter_flows_lph"]
+    )
+    assert (
+        with_connection_loss["head_loss_m"]
+        - no_connection_loss["head_loss_m"]
+    ) == pytest.approx(expected_minor_loss_m, rel=1e-10)
+    assert with_connection_loss["outlet_pressure_bar"] < (
+        no_connection_loss["outlet_pressure_bar"]
+    )
+    assert with_connection_loss["head_loss_m"] == pytest.approx(
+        sum(with_connection_loss["segment_head_losses_m"])
+    )
+
