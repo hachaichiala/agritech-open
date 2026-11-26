@@ -855,3 +855,27 @@ def test_permuting_elevation_profile_preserves_fixed_flow_hydraulics():
             expected_pressures
         )
 
+
+def test_single_emitter_has_one_segment_and_balanced_flow():
+    result = analyze_non_compensating_dripline(
+        **_base(
+            number_of_emitters=1,
+            discharge_exponent=0.0,
+            emitter_connection_k=0.0,
+        )
+    )
+
+    assert result["converged"] is True
+    assert result["emitter_flows_lph"] == pytest.approx([4.0])
+    assert result["emitter_pressures_bar"] == pytest.approx(
+        [result["outlet_pressure_bar"]]
+    )
+    assert result["segment_flows_lph"] == pytest.approx([4.0])
+    assert len(result["segment_head_losses_m"]) == 1
+    assert result["total_flow_lph"] == pytest.approx(4.0)
+    assert result["minimum_flow_lph"] == pytest.approx(4.0)
+    assert result["maximum_flow_lph"] == pytest.approx(4.0)
+    assert result["head_loss_m"] == pytest.approx(
+        sum(result["segment_head_losses_m"])
+    )
+
