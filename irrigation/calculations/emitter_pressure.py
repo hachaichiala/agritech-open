@@ -200,3 +200,7 @@ def analyze_emitter_pressure_distribution(
         "maximum_pressure_bar": max(emitter_pressures_bar),
         "all_emitters_within_range": within_count == total_count,
     }
+def analyze_emitter_pressure_distribution(
+    emitter_pressures_bar: list,
+    pressure_range: EmitterPressureRange,
+) -> dict:
