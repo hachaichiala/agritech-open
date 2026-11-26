@@ -263,3 +263,14 @@ def test_analyze_dripline_emitter_pressures_rejects_invalid_range():
             diameter_m=0.016,
             pressure_range=None,
         )
+
+
+
+def test_new_pressure_analysis_functions_are_publicly_exported():
+    from irrigation.calculations import (
+        analyze_dripline_emitter_pressures,
+        calculate_pressure_at_each_emitter,
+    )
+
+    assert callable(analyze_dripline_emitter_pressures)
+    assert callable(calculate_pressure_at_each_emitter)
