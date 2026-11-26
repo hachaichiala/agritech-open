@@ -77,3 +77,24 @@ def test_hazen_williams_rejects_unrepresentable_results(
             length, flow, diameter, coefficient
         )
 
+
+
+@pytest.mark.parametrize(
+    "length, flow, diameter, coefficient",
+    [
+        (10**400, 0.001, 0.05, 150),
+        (100, 10**400, 0.05, 150),
+        (100, 0.001, 10**400, 150),
+        (100, 0.001, 0.05, 10**400),
+        ("100", 0.001, 0.05, 150),
+        (100, 0.001, 0.05, float("nan")),
+        (True, 0.001, 0.05, 150),
+    ],
+)
+def test_hazen_williams_rejects_non_numeric_or_unrepresentable_inputs(
+    length, flow, diameter, coefficient
+):
+    with pytest.raises(ValueError, match="finite number"):
+        calculate_hazen_williams_head_loss(
+            length, flow, diameter, coefficient
+        )
