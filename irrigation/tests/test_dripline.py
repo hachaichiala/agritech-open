@@ -398,3 +398,72 @@ def test_connection_losses_reduce_pressure_at_emitters():
         with_k < without_k
         for with_k, without_k in zip(with_connections, without_connections)
     )
+
+
+
+def test_zero_elevation_profile_preserves_horizontal_pressure_results():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    horizontal = calculate_pressure_at_each_emitter(**common)
+    zero_profile = calculate_pressure_at_each_emitter(
+        **common, emitter_elevations_m=[0.0, 0.0, 0.0]
+    )
+    assert zero_profile == pytest.approx(horizontal)
+
+
+def test_uphill_elevation_reduces_emitter_pressure():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    horizontal = calculate_pressure_at_each_emitter(**common)
+    uphill = calculate_pressure_at_each_emitter(
+        **common, emitter_elevations_m=[0.5, 1.0, 1.5]
+    )
+    assert all(up < flat for up, flat in zip(uphill, horizontal))
+    assert uphill[-1] == pytest.approx(horizontal[-1] - 1.5 * 0.0980665)
+
+
+def test_downhill_elevation_increases_emitter_pressure():
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+    horizontal = calculate_pressure_at_each_emitter(**common)
+    downhill = calculate_pressure_at_each_emitter(
+        **common, emitter_elevations_m=[-0.5, -1.0, -1.5]
+    )
+    assert all(down > flat for down, flat in zip(downhill, horizontal))
+
+
+@pytest.mark.parametrize(
+    "elevations",
+    [
+        [0.0, 1.0],
+        [0.0, float("inf"), 1.0],
+        [0.0, float("nan"), 1.0],
+        [0.0, True, 1.0],
+        [0.0, "1", 1.0],
+    ],
+)
+def test_invalid_emitter_elevation_profile_is_rejected(elevations):
+    with pytest.raises(ValueError):
+        calculate_pressure_at_each_emitter(
+            inlet_pressure_bar=2.0,
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            emitter_elevations_m=elevations,
+        )
