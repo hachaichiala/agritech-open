@@ -5,7 +5,10 @@ Pressure loss calculations for drip irrigation laterals.
 
 import math
 
-from .pressure_loss import (\n    calculate_hazen_williams_head_loss,\n    calculate_minor_head_loss,\n)
+from .pressure_loss import (
+    calculate_hazen_williams_head_loss,
+    calculate_minor_head_loss,
+)
 from .units import liters_per_hour_to_cubic_meters_per_second
 
 
