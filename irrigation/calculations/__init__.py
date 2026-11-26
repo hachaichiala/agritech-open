@@ -45,3 +45,5 @@ from .manifold import (
 from .irrigation_sector import (
     analyze_irrigation_sector,
 )
+
+from .pump_head import calculate_required_pump_head
