@@ -1165,3 +1165,15 @@ def test_tuple_elevation_profile_matches_equivalent_list_profile():
     assert tuple_result["head_loss_m"] == pytest.approx(
         list_result["head_loss_m"], rel=1e-12
     )
+
+def test_invalid_tuple_elevation_profiles_are_rejected():
+    invalid_profiles = (
+        (0.0, 0.1),
+        (0.0, 0.1, float("nan"), 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1),
+    )
+
+    for elevations in invalid_profiles:
+        with pytest.raises(ValueError):
+            analyze_non_compensating_dripline(
+                **_base(emitter_elevations_m=elevations)
+            )
