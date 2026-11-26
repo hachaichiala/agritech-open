@@ -40,6 +40,8 @@ def _analyze(**overrides):
         "analysis_period_years": 5,
         "motor_efficiency_percent": 90,
         "discount_rate_percent": 5,
+        "minimum_velocity_m_s": 0.1,
+        "maximum_velocity_m_s": 1.5,
     }
     args.update(overrides)
     return analyze_pipe_diameter_decision(**args)
