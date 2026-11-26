@@ -90,6 +90,11 @@ from .pipe_economic_sensitivity import (
     analyze_pipe_economic_sensitivity,
 )
 
+from .pipe_velocity import (
+    calculate_pipe_velocity,
+    assess_pipe_velocity,
+)
+
 from .pipe_diameter_report import (
     build_pipe_diameter_report,
 )
