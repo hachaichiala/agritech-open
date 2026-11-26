@@ -79,3 +79,9 @@ def test_returns_model_assumptions():
     result = _build()
     assert result["method"] == "hazen_williams_friction_plus_k_factor_local_losses"
     assert len(result["assumptions"]) == 4
+
+
+@pytest.mark.parametrize("diameter", [1e-200, 1e200])
+def test_rejects_unrepresentable_pipe_cross_section_area(diameter):
+    with pytest.raises(ValueError, match="cross-sectional area"):
+        _build(upstream_pipe_diameter_m=diameter)
