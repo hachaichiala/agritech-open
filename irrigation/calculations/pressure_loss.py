@@ -51,14 +51,24 @@ def calculate_hazen_williams_head_loss(
     if length_m == 0 or flow_m3_s == 0:
         return 0.0
 
-    head_loss = (
-        10.67
-        * length_m
-        * (flow_m3_s ** 1.852)
-        / (
-            (hazen_williams_c ** 1.852)
-            * (diameter_m ** 4.871)
+    try:
+        head_loss = (
+            10.67
+            * length_m
+            * (flow_m3_s ** 1.852)
+            / (
+                (hazen_williams_c ** 1.852)
+                * (diameter_m ** 4.871)
+            )
         )
-    )
+    except (OverflowError, ZeroDivisionError) as exc:
+        raise ValueError(
+            "Calculated head loss must be a finite number."
+        ) from exc
+
+    if not math.isfinite(head_loss):
+        raise ValueError(
+            "Calculated head loss must be a finite number."
+        )
 
     return head_loss
