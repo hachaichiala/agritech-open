@@ -9,6 +9,18 @@ piecewise-linear between supplied points.
 import math
 
 
+def _is_finite_number(value):
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+    ):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _validate_curve(points, name, head_direction):
     if not isinstance(points, (list, tuple)) or len(points) < 2:
         raise ValueError(f"{name} must contain at least two points.")
@@ -21,11 +33,7 @@ def _validate_curve(points, name, head_direction):
             )
         flow, head = point
         for value, label in ((flow, "flow"), (head, "head")):
-            if (
-                not isinstance(value, (int, float))
-                or isinstance(value, bool)
-                or not math.isfinite(value)
-            ):
+            if not _is_finite_number(value):
                 raise ValueError(
                     f"{name} {label} values must be finite numbers."
                 )
@@ -48,6 +56,26 @@ def _validate_curve(points, name, head_direction):
     return validated
 
 
+def validate_pump_curve(points):
+    """
+    Validate and normalize pump curve points.
+
+    Returns a list of (flow_m3_s, head_m) float pairs. Flow must increase
+    strictly while pump head must stay constant or decrease.
+    """
+    return _validate_curve(points, "Pump curve", "decreasing")
+
+
+def validate_system_curve(points):
+    """
+    Validate and normalize system curve points.
+
+    Returns a list of (flow_m3_s, head_m) float pairs. Flow and system
+    head must both increase or stay constant.
+    """
+    return _validate_curve(points, "System curve", "increasing")
+
+
 def _interpolate(curve, flow):
     for (flow_a, head_a), (flow_b, head_b) in zip(curve, curve[1:]):
         if flow_a <= flow <= flow_b:
@@ -63,8 +91,8 @@ def find_pump_operating_point(pump_curve, system_curve) -> dict:
     Both curves must be sequences of (flow_m3_s, head_m) points.
     The result is a piecewise-linear intersection, not an extrapolation.
     """
-    pump = _validate_curve(pump_curve, "Pump curve", "decreasing")
-    system = _validate_curve(system_curve, "System curve", "increasing")
+    pump = validate_pump_curve(pump_curve)
+    system = validate_system_curve(system_curve)
 
     overlap_min = max(pump[0][0], system[0][0])
     overlap_max = min(pump[-1][0], system[-1][0])
