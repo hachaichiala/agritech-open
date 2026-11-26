@@ -44,6 +44,20 @@ def test_rejects_invalid_or_non_intersecting_curves(
         find_pump_operating_point(pump_curve, system_curve)
 
 
+
+def test_finds_intersection_without_overflow_for_large_finite_heads():
+    result = find_pump_operating_point(
+        pump_curve=[(0.0, 1e308), (1.0, 0.0)],
+        system_curve=[(0.0, 0.0), (1.0, 1e308)],
+    )
+
+    assert result["flow_m3_s"] == pytest.approx(0.5)
+    assert result["pump_head_m"] == pytest.approx(5e307)
+    assert result["system_head_m"] == pytest.approx(5e307)
+    assert result["head_m"] == pytest.approx(5e307)
+
+
+
 def test_rejects_curves_with_multiple_intersections():
     with pytest.raises(ValueError, match="multiple intersections"):
         find_pump_operating_point(
