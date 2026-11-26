@@ -64,3 +64,50 @@ def test_required_pump_head_rejects_non_positive_total():
             static_elevation_difference_m=-30,
             required_sector_inlet_pressure_bar=1,
         )
+
+
+
+def test_sector_pump_requirement_combines_sector_flow_and_head():
+    from irrigation.calculations.pump_head import (
+        calculate_sector_pump_requirement,
+    )
+
+    sector = {
+        "total_flow_lph": 720,
+        "inlet_pressure_bar": 2,
+    }
+    result = calculate_sector_pump_requirement(
+        sector_analysis=sector,
+        static_elevation_difference_m=4,
+        upstream_friction_losses_m=2,
+        upstream_local_losses_m=1,
+    )
+
+    assert result["sector_total_flow_lph"] == pytest.approx(720)
+    assert result["sector_total_flow_m3_s"] == pytest.approx(0.0002)
+    assert result["total_dynamic_head_m"] == pytest.approx(
+        4 + 2 * 10.197162129779 + 2 + 1,
+        rel=1e-5,
+    )
+
+
+@pytest.mark.parametrize(
+    "sector",
+    [
+        None,
+        {},
+        {"total_flow_lph": 0, "inlet_pressure_bar": 2},
+        {"total_flow_lph": float("inf"), "inlet_pressure_bar": 2},
+        {"total_flow_lph": 100, "inlet_pressure_bar": 0},
+    ],
+)
+def test_sector_pump_requirement_rejects_invalid_sector_analysis(sector):
+    from irrigation.calculations.pump_head import (
+        calculate_sector_pump_requirement,
+    )
+
+    with pytest.raises(ValueError):
+        calculate_sector_pump_requirement(
+            sector_analysis=sector,
+            static_elevation_difference_m=2,
+        )
