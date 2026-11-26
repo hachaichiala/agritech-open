@@ -1131,3 +1131,37 @@ def test_coupled_solver_balances_non_monotonic_elevations_with_pressure_dependen
     assert result["head_loss_m"] == pytest.approx(
         sum(result["segment_head_losses_m"]), rel=1e-10
     )
+
+def test_tuple_elevation_profile_matches_equivalent_list_profile():
+    elevations = (0.0, 0.15, -0.05, 0.25, 0.1, 0.35)
+    common = _base(
+        number_of_emitters=6,
+        discharge_exponent=0.5,
+        emitter_connection_k=0.3,
+    )
+
+    list_result = analyze_non_compensating_dripline(
+        **common,
+        emitter_elevations_m=list(elevations),
+    )
+    tuple_result = analyze_non_compensating_dripline(
+        **common,
+        emitter_elevations_m=elevations,
+    )
+
+    assert tuple_result["converged"] is True
+    assert tuple_result["emitter_flows_lph"] == pytest.approx(
+        list_result["emitter_flows_lph"], rel=1e-12
+    )
+    assert tuple_result["emitter_pressures_bar"] == pytest.approx(
+        list_result["emitter_pressures_bar"], rel=1e-12
+    )
+    assert tuple_result["segment_flows_lph"] == pytest.approx(
+        list_result["segment_flows_lph"], rel=1e-12
+    )
+    assert tuple_result["segment_head_losses_m"] == pytest.approx(
+        list_result["segment_head_losses_m"], rel=1e-12
+    )
+    assert tuple_result["head_loss_m"] == pytest.approx(
+        list_result["head_loss_m"], rel=1e-12
+    )
