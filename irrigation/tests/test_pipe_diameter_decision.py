@@ -243,3 +243,30 @@ def test_manufacturer_internal_diameter_is_used_for_hazen_williams_losses():
             if item["pipe_diameter_m"] == diameter
         )
         assert pressure["internal_diameter_m"] == pytest.approx(internal_diameter)
+
+@pytest.mark.parametrize("invalid_diameter", [0, -0.04, True, float("inf"), float("nan")])
+def test_rejects_invalid_manufacturer_specification_diameter(invalid_diameter):
+    specs = _pipe_specs()
+    specs[0]["pipe_diameter_m"] = invalid_diameter
+    with pytest.raises(ValueError, match="positive finite number"):
+        _analyze(pipe_specifications=specs)
+
+
+def test_rejects_duplicate_manufacturer_specification_diameters():
+    specs = _pipe_specs()
+    duplicate = dict(specs[0])
+    specs.append(duplicate)
+    with pytest.raises(ValueError, match="must be unique"):
+        _analyze(pipe_specifications=specs)
+
+
+def test_requires_manufacturer_specifications_for_every_candidate():
+    with pytest.raises(ValueError, match="cover every candidate internal diameter"):
+        _analyze(pipe_specifications=_pipe_specs()[:1])
+
+
+@pytest.mark.parametrize("invalid_flag", [None, 0, 1, "true"])
+def test_requires_boolean_for_unverified_specification_override(invalid_flag):
+    with pytest.raises(ValueError, match="must be a boolean"):
+        _analyze(allow_unverified_pipe_specifications=invalid_flag)
+
