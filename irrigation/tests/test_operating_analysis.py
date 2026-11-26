@@ -120,3 +120,31 @@ def test_rejects_zero_efficiency_at_operating_point():
             },
             SYSTEM_CURVE,
         )
+
+def test_interpolates_efficiency_at_upper_curve_endpoint():
+    result = analyze_pump_operation(
+        {
+            "pump_curve": [(0.0, 30.0), (1.0, 20.0)],
+            "efficiency_curve": [(0.0, 50.0), (1.0, 60.0)],
+        },
+        [(0.0, 10.0), (1.0, 20.0)],
+    )
+
+    assert result["operating_point"]["flow_m3_s"] == pytest.approx(1.0)
+    assert result["power"]["pump_efficiency_percent"] == pytest.approx(60.0)
+
+
+def test_reports_zero_motor_power_margin_at_exact_rated_output():
+    result = analyze_pump_operation(
+        {
+            "rated_motor_power_kw": 0.367749375,
+            "pump_curve": PUMP_CURVE,
+        },
+        SYSTEM_CURVE,
+        pump_efficiency_percent=50,
+    )
+
+    check = result["motor_power_check"]
+    assert check["available_margin_kw"] == pytest.approx(0.0)
+    assert check["within_rated_power"] is True
+
