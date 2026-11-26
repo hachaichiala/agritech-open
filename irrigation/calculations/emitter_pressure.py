@@ -220,12 +220,13 @@ def analyze_dripline_emitter_pressures(
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
     emitter_connection_k: float = 0.0,
+    emitter_elevations_m: list | None = None,
 ) -> dict:
     """
     Calculate and assess pressure at every emitter along a dripline.
 
-    Emitters are assumed to be equally spaced on a horizontal lateral,
-    matching calculate_pressure_at_each_emitter.
+    Emitters are assumed to be equally spaced. Optional elevations are
+    measured relative to the lateral inlet, with positive values uphill.
     """
 
     if not _is_positive_finite_number(inlet_pressure_bar):
@@ -242,6 +243,7 @@ def analyze_dripline_emitter_pressures(
         diameter_m=diameter_m,
         hazen_williams_c=hazen_williams_c,
         emitter_connection_k=emitter_connection_k,
+        emitter_elevations_m=emitter_elevations_m,
     )
 
     if any(pressure <= 0 for pressure in emitter_pressures_bar):
