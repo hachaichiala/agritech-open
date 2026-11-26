@@ -217,3 +217,30 @@ Project status
 
 Initial development and project planning.
 
+## Current Features
+
+- Total irrigation flow calculation.
+- Emitter quantity and tree-zone flow calculation.
+- Hazen-Williams pressure loss calculation.
+- Hydraulic unit conversions.
+- Initial dripline friction loss estimation.
+
+## Testing
+
+The project uses pytest for automated testing.
+
+Current test suite: 48 tests.
+
+Run tests locally with:
+
+```bash
+python -m pytest irrigation/tests -v
+```
+
+## Development Status
+
+Version: 0.1.0
+
+The irrigation calculation engine is under active development.
+All hydraulic models require further validation before field deployment.
+
