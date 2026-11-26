@@ -10,6 +10,7 @@ import math
 from .pump_curve import find_pump_operating_point
 from .pump_power import calculate_pump_power
 from .pump_data import validate_pump_data
+from .system_curve import build_system_curve
 
 
 def _interpolate_efficiency(curve, flow):
@@ -86,3 +87,35 @@ def analyze_pump_operation(
         }
 
     return result
+
+
+
+def analyze_pump_system(
+    pump_data,
+    system_curve_parameters,
+    pump_efficiency_percent=None,
+    motor_efficiency_percent=None,
+):
+    """
+    Build a system curve from hydraulic inputs, then analyze pump operation.
+
+    system_curve_parameters must contain the keyword arguments accepted by
+    build_system_curve. The returned result includes the generated curve,
+    its hydraulic details, assumptions, and the operating/power analysis.
+    """
+    if not isinstance(system_curve_parameters, dict):
+        raise ValueError("System curve parameters must be a dictionary.")
+
+    system = build_system_curve(**system_curve_parameters)
+    analysis = analyze_pump_operation(
+        pump_data=pump_data,
+        system_curve=system["system_curve"],
+        pump_efficiency_percent=pump_efficiency_percent,
+        motor_efficiency_percent=motor_efficiency_percent,
+    )
+
+    return {
+        "system": system,
+        "pump_analysis": analysis,
+        "method": "generated_system_curve_then_pump_operating_analysis",
+    }
