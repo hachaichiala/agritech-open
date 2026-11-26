@@ -404,3 +404,29 @@ def test_reference_100m_lateral_emitter_pressure_distribution():
     assert result["compliance_percentage"] == pytest.approx(100.0)
     assert result["all_pressures_within_range"] is True
 
+
+
+
+def test_pressure_analysis_passes_emitter_connection_k_to_model():
+    baseline = analyze_dripline_pressure(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+    with_local_losses = analyze_dripline_pressure(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+        emitter_connection_k=1.0,
+    )
+    assert with_local_losses["head_loss_m"] > baseline["head_loss_m"]
+    assert (
+        with_local_losses["outlet_pressure_bar"]
+        < baseline["outlet_pressure_bar"]
+    )
