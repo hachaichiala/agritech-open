@@ -325,3 +325,39 @@ def test_pressure_at_lateral_takeoffs_rejects_insufficient_inlet_pressure():
             lateral_flow_lph=800,
             diameter_m=0.04,
         )
+
+
+def test_manifold_total_flow_rejects_integer_overflow():
+    with pytest.raises(ValueError, match="finite"):
+        calculate_manifold_total_flow(
+            number_of_laterals=10**1000,
+            lateral_flow_lph=8,
+        )
+
+
+def test_manifold_segment_calculation_rejects_unrepresentable_lateral_count():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    with pytest.raises(ValueError, match="segment length"):
+        calculate_manifold_segment_head_losses(
+            length_m=30,
+            number_of_laterals=10**1000,
+            lateral_flow_lph=8,
+            diameter_m=0.04,
+        )
+
+
+def test_manifold_segment_calculation_rejects_flow_multiplication_overflow():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+    )
+
+    with pytest.raises(ValueError, match="segment flow"):
+        calculate_manifold_segment_head_losses(
+            length_m=30,
+            number_of_laterals=10**308,
+            lateral_flow_lph=1e308,
+            diameter_m=0.04,
+        )
