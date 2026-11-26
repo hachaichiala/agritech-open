@@ -3,6 +3,9 @@ import pytest
 from irrigation.calculations.pipe_diameter_decision import (
     analyze_pipe_diameter_decision,
 )
+from irrigation.calculations.pressure_loss import (
+    calculate_hazen_williams_head_loss,
+)
 
 
 PUMP = {
@@ -210,3 +213,33 @@ def test_specification_diameter_must_match_calculated_internal_diameter():
     specs[0]["pipe_diameter_m"] = 0.041
     with pytest.raises(ValueError, match="calculated manufacturer internal diameter"):
         _analyze(pipe_specifications=specs)
+
+
+
+def test_manufacturer_internal_diameter_is_used_for_hazen_williams_losses():
+    specs = _pipe_specs()
+    result = _analyze(pipe_specifications=specs)
+    scenarios = result["hydraulic_and_economic_comparison"]["scenarios"]
+
+    for scenario in scenarios:
+        diameter = scenario["pipe_diameter_m"]
+        spec = next(item for item in specs if item["pipe_diameter_m"] == diameter)
+        internal_diameter = (
+            spec["outside_diameter_m"] - 2 * spec["wall_thickness_m"]
+        )
+        details = scenario["analysis"]["system"]["flow_details"]
+
+        for point in details:
+            expected_loss = calculate_hazen_williams_head_loss(
+                length_m=SYSTEM["upstream_pipe_length_m"],
+                flow_m3_s=point["flow_m3_s"],
+                diameter_m=internal_diameter,
+                hazen_williams_c=SYSTEM["hazen_williams_c"],
+            )
+            assert point["friction_loss_m"] == pytest.approx(expected_loss)
+
+        pressure = next(
+            item for item in result["pressure_assessments"]
+            if item["pipe_diameter_m"] == diameter
+        )
+        assert pressure["internal_diameter_m"] == pytest.approx(internal_diameter)
