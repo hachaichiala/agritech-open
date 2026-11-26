@@ -184,6 +184,15 @@ def calculate_pressure_at_each_emitter(
             "Inlet pressure must be a positive finite number."
         )
 
+    segment_losses = calculate_dripline_segment_head_losses(
+        length_m=length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
+    )
+
     if emitter_elevations_m is None:
         emitter_elevations_m = [0.0] * number_of_emitters
     elif not isinstance(emitter_elevations_m, (list, tuple)):
@@ -213,15 +222,6 @@ def calculate_pressure_at_each_emitter(
                 "Emitter elevations must be finite numbers."
             )
         normalized_elevations.append(elevation)
-
-    segment_losses = calculate_dripline_segment_head_losses(
-        length_m=length_m,
-        number_of_emitters=number_of_emitters,
-        emitter_flow_lph=emitter_flow_lph,
-        diameter_m=diameter_m,
-        hazen_williams_c=hazen_williams_c,
-        emitter_connection_k=emitter_connection_k,
-    )
 
     pressures = []
     cumulative_loss_m = 0.0
