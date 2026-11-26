@@ -11,7 +11,10 @@ Assumptions:
 import math
 
 from .pressure_loss import calculate_hazen_williams_head_loss
-from .units import liters_per_hour_to_cubic_meters_per_second
+from .units import (
+    liters_per_hour_to_cubic_meters_per_second,
+    meters_of_water_to_bar,
+)
 
 
 def _validate_positive_finite(value, name):
@@ -135,3 +138,47 @@ def calculate_manifold_head_loss(
         raise ValueError("Calculated manifold head loss must be finite.")
 
     return total_head_loss_m
+
+
+
+def calculate_pressure_at_each_lateral_takeoff(
+    inlet_pressure_bar: float,
+    length_m: float,
+    number_of_laterals: int,
+    lateral_flow_lph: float,
+    diameter_m: float,
+    hazen_williams_c: float = 150,
+) -> list:
+    """
+    Calculate pressure at each lateral takeoff, in bar.
+
+    Each returned pressure includes cumulative manifold friction losses
+    from the manifold inlet to that lateral takeoff.
+    """
+    _validate_positive_finite(inlet_pressure_bar, "Manifold inlet pressure")
+
+    segment_losses_m = calculate_manifold_segment_head_losses(
+        length_m=length_m,
+        number_of_laterals=number_of_laterals,
+        lateral_flow_lph=lateral_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+    )
+
+    pressures_bar = []
+    cumulative_loss_m = 0.0
+
+    for segment_loss_m in segment_losses_m:
+        cumulative_loss_m += segment_loss_m
+        pressure_loss_bar = meters_of_water_to_bar(cumulative_loss_m)
+        takeoff_pressure_bar = inlet_pressure_bar - pressure_loss_bar
+
+        if not math.isfinite(takeoff_pressure_bar) or takeoff_pressure_bar <= 0:
+            raise ValueError(
+                "Manifold pressure reaches zero or below at a lateral takeoff. "
+                "Increase inlet pressure or reduce manifold friction losses."
+            )
+
+        pressures_bar.append(takeoff_pressure_bar)
+
+    return pressures_bar
