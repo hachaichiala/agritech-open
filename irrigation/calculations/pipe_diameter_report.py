@@ -130,6 +130,14 @@ def build_pipe_diameter_report(decision_result):
         f"- القطر المقترح: {_number(report['recommendation'].get('pipe_diameter_m'))} م",
         f"- صافي القيمة الحالية: {_number(report['recommendation'].get('net_present_life_cycle_cost_tnd'), 2)} دينار",
         "",
+        "## حدود السرعة",
+        (
+            f"- الحد الأدنى: {_number(report["velocity_limits_m_s"].get("minimum"))} م/ث\\n"
+            f"- الحد الأقصى: {_number(report["velocity_limits_m_s"].get("maximum"))} م/ث"
+            if report["velocity_limits_m_s"] else
+            "لم تُحدد حدود سرعة في بيانات التوصية."
+        ),
+        "",
         "## مقارنة البدائل",
         "| القطر (م) | الحالة الهيدروليكية | السرعة (م/ث) | تقييم السرعة | التدفق (ل/ث) | HMT (م) | قدرة العمود (كW) | شراء الأنبوب (د.ت) | الطاقة (د.ت) | NPV (د.ت) |",
         "|---:|---|---:|---|---:|---:|---:|---:|---:|---:|",
