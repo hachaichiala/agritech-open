@@ -109,9 +109,17 @@ def calculate_dripline_segment_head_losses(
     if (
         not isinstance(emitter_connection_k, (int, float))
         or isinstance(emitter_connection_k, bool)
-        or not math.isfinite(emitter_connection_k)
-        or emitter_connection_k < 0
     ):
+        raise ValueError(
+            "Emitter connection K must be a non-negative finite number."
+        )
+    try:
+        emitter_connection_k = float(emitter_connection_k)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError(
+            "Emitter connection K must be a non-negative finite number."
+        ) from None
+    if not math.isfinite(emitter_connection_k) or emitter_connection_k < 0:
         raise ValueError(
             "Emitter connection K must be a non-negative finite number."
         )
