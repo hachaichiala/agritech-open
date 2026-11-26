@@ -90,6 +90,10 @@ from .pipe_economic_sensitivity import (
     analyze_pipe_economic_sensitivity,
 )
 
+from .pipe_diameter_decision import (
+    analyze_pipe_diameter_decision,
+)
+
 from .pipe_lifecycle_cost import (
     analyze_pipe_lifecycle_cost,
 )
