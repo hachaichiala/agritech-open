@@ -1063,3 +1063,71 @@ def test_five_emitters_balance_flow_across_five_segments():
         expected_pressures_bar[-1], rel=1e-10
     )
 
+def test_coupled_solver_balances_non_monotonic_elevations_with_pressure_dependent_flows():
+    import math
+
+    elevations_m = [0.0, 0.25, -0.1, 0.4, 0.15, 0.6]
+    connection_k = 0.4
+    result = analyze_non_compensating_dripline(
+        **_base(
+            number_of_emitters=6,
+            length_m=30.0,
+            discharge_exponent=0.5,
+            emitter_connection_k=connection_k,
+            emitter_elevations_m=elevations_m,
+            tolerance=1e-10,
+        )
+    )
+
+    assert result["converged"] is True
+    assert result["total_flow_lph"] == pytest.approx(
+        sum(result["emitter_flows_lph"])
+    )
+    assert result["segment_flows_lph"] == pytest.approx(
+        [
+            sum(result["emitter_flows_lph"][index:])
+            for index in range(len(elevations_m))
+        ]
+    )
+
+    area_m2 = math.pi * 0.020 ** 2 / 4.0
+    cumulative_loss_m = 0.0
+    expected_pressures_bar = []
+
+    for index, (segment_flow_lph, elevation_m) in enumerate(
+        zip(result["segment_flows_lph"], elevations_m)
+    ):
+        flow_m3_s = segment_flow_lph / 3_600_000.0
+        velocity_m_s = flow_m3_s / area_m2
+        friction_loss_m = (
+            10.67
+            * (30.0 / 6)
+            * flow_m3_s ** 1.852
+            / (150.0 ** 1.852 * 0.020 ** 4.871)
+        )
+        connection_loss_m = (
+            connection_k * velocity_m_s ** 2 / (2.0 * 9.80665)
+        )
+        cumulative_loss_m += friction_loss_m + connection_loss_m
+        expected_pressure = (
+            2.0 - (cumulative_loss_m + elevation_m) * 0.0980665
+        )
+        expected_pressures_bar.append(expected_pressure)
+
+        assert result["segment_head_losses_m"][index] == pytest.approx(
+            friction_loss_m + connection_loss_m, rel=1e-9, abs=1e-12
+        )
+
+    assert result["emitter_pressures_bar"] == pytest.approx(
+        expected_pressures_bar, rel=1e-9, abs=1e-10
+    )
+    assert result["emitter_flows_lph"] == pytest.approx(
+        [
+            4.0 * (pressure / 1.0) ** 0.5
+            for pressure in expected_pressures_bar
+        ],
+        rel=1e-7,
+    )
+    assert result["head_loss_m"] == pytest.approx(
+        sum(result["segment_head_losses_m"]), rel=1e-10
+    )
