@@ -33,16 +33,23 @@ def build_pipe_diameter_report(decision_result):
         for item in lifecycle["scenarios"]
         if isinstance(item, dict)
     }
+    velocity_by_diameter = {
+        item.get("pipe_diameter_m"): item
+        for item in decision_result.get("velocity_assessments", [])
+        if isinstance(item, dict)
+    }
 
     alternatives = []
     for scenario in comparison["scenarios"]:
         if not isinstance(scenario, dict):
             raise ValueError("Each comparison scenario must be a dictionary.")
         diameter = scenario.get("pipe_diameter_m")
+        velocity = velocity_by_diameter.get(diameter)
         item = {
             "pipe_diameter_m": diameter,
             "hydraulic_status": scenario.get("status"),
             "economic_status": scenario.get("economic_status"),
+            "velocity_assessment": dict(velocity) if velocity else None,
         }
         analysis = scenario.get("analysis")
         if isinstance(analysis, dict):
@@ -98,6 +105,7 @@ def build_pipe_diameter_report(decision_result):
         "recommendation": dict(recommendation),
         "alternatives": alternatives,
         "payback_comparisons": list(payback.get("comparisons", [])),
+        "velocity_limits_m_s": dict(recommendation.get("velocity_limits_m_s", {})),
         "sensitivity": None if sensitivity is None else {
             "case_count": sensitivity.get("case_count"),
             "successful_case_count": sensitivity.get("successful_case_count"),
@@ -123,20 +131,23 @@ def build_pipe_diameter_report(decision_result):
         f"- صافي القيمة الحالية: {_number(report['recommendation'].get('net_present_life_cycle_cost_tnd'), 2)} دينار",
         "",
         "## مقارنة البدائل",
-        "| القطر (م) | الحالة الهيدروليكية | التدفق (ل/ث) | HMT (م) | قدرة العمود (كW) | شراء الأنبوب (د.ت) | الطاقة (د.ت) | NPV (د.ت) |",
-        "|---:|---|---:|---:|---:|---:|---:|---:|",
+        "| القطر (م) | الحالة الهيدروليكية | السرعة (م/ث) | تقييم السرعة | التدفق (ل/ث) | HMT (م) | قدرة العمود (كW) | شراء الأنبوب (د.ت) | الطاقة (د.ت) | NPV (د.ت) |",
+        "|---:|---|---:|---|---:|---:|---:|---:|---:|---:|",
     ]
     for item in alternatives:
         point = item.get("operating_point") or {}
         power = item.get("power") or {}
         economics = item.get("economics") or {}
         life = item.get("life_cycle_cost") or {}
+        velocity = item.get("velocity_assessment") or {}
         shaft_kw = power.get("shaft_power_w")
         lines.append(
             "| "
             + " | ".join([
                 _number(item.get("pipe_diameter_m")),
                 str(item.get("hydraulic_status") or "غير محدد"),
+                _number(velocity.get("velocity_m_s")),
+                str(velocity.get("assessment") or "غير متاح"),
                 _number(point.get("flow_l_s")),
                 _number(point.get("head_m")),
                 _number(shaft_kw / 1000 if shaft_kw is not None else None),
