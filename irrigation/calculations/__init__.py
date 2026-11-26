@@ -81,3 +81,7 @@ from .system_curve import (
 from .pipe_diameter_comparison import (
     compare_pipe_diameters,
 )
+
+from .pipe_economic_comparison import (
+    compare_pipe_diameter_economics,
+)
