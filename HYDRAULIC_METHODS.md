@@ -37,7 +37,17 @@ For each segment, the engine applies Hazen-Williams to the remaining downstream 
 
 This is a constant-discharge approximation. It is suitable for a first hydraulic estimate when emitter discharge is effectively constant, such as within the operating range of a pressure-compensating emitter. The current implementation does not solve the pressure-discharge relationship iteratively for non-pressure-compensating emitters.
 
-The current lateral calculation includes pipe-wall friction only. It does not yet add local losses caused by emitter connectors, barbs, or inline emitter geometry. Published microirrigation research identifies these local losses as a separate contribution which depends on connector geometry and lateral design. For close emitter spacing or detailed uniformity design, this omission must be assessed.
+### 2.1 Emitter-connection local losses
+
+The lateral model supports an optional local-loss coefficient, `emitter_connection_k`, for the connection at each emitter. It calculates each connection loss with:
+
+\[
+h_{m,i} = K_e\frac{V_i^2}{2g}
+\]
+
+The velocity \(V_i\) is based on the lateral flow immediately upstream of that connection. Under the current segment convention, each segment ends at one emitter, so the model applies one connection loss per segment. The flow for successive segments is based on the remaining downstream nominal emitter flow.
+
+The default coefficient is zero to preserve the earlier friction-only result. Supply a measured or manufacturer-supported K value for the specific connector geometry. Do not treat one generic K value as valid for every emitter, barb, take-off, or inline emitter design. The current interface uses one shared K value for all emitter connections along a lateral.
 
 The lateral model also does not yet include elevation changes along the lateral. For sloping laterals, pressure distribution must include the elevation head at each emitter.
 
