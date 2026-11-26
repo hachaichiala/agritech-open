@@ -177,3 +177,89 @@ def test_emitter_pressure_distribution_invalid_pressure():
             [2.0, float("nan")],
             EmitterPressureRange(),
         )
+
+
+def test_pressure_range_rejects_boolean_and_unrepresentable_values():
+    with pytest.raises(ValueError):
+        EmitterPressureRange(True, 4.0)
+
+    with pytest.raises(ValueError):
+        EmitterPressureRange(1.0, 10 ** 1000)
+
+
+def test_check_dripline_pressure_rejects_unrepresentable_values():
+    with pytest.raises(ValueError):
+        check_dripline_pressure(
+            inlet_pressure_bar=10 ** 1000,
+            head_loss_m=0,
+            pressure_range=EmitterPressureRange(),
+        )
+
+
+def test_analyze_emitter_pressure_distribution_reports_compliance():
+    result = analyze_emitter_pressure_distribution(
+        emitter_pressures_bar=[2.0, 1.5, 0.8, 0.5],
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["compliance_percentage"] == pytest.approx(50.0)
+
+
+def test_analyze_dripline_emitter_pressures():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    result = analyze_dripline_emitter_pressures(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["total_emitters"] == 3
+    assert len(result["emitter_pressures_bar"]) == 3
+    assert result["outlet_pressure_bar"] == pytest.approx(
+        result["emitter_pressures_bar"][-1]
+    )
+    assert result["head_loss_m"] == pytest.approx(0.00154314, rel=1e-4)
+    assert result["all_emitters_within_range"] is True
+    assert result["all_pressures_within_range"] is True
+    assert result["compliance_percentage"] == pytest.approx(100.0)
+
+
+def test_analyze_dripline_emitter_pressures_checks_inlet_range():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    result = analyze_dripline_emitter_pressures(
+        inlet_pressure_bar=0.8,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["inlet_within_range"] is False
+    assert result["all_emitters_within_range"] is False
+    assert result["all_pressures_within_range"] is False
+
+
+def test_analyze_dripline_emitter_pressures_rejects_invalid_range():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    with pytest.raises(ValueError, match="Invalid emitter pressure range"):
+        analyze_dripline_emitter_pressures(
+            inlet_pressure_bar=2.0,
+            length_m=20,
+            number_of_emitters=3,
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            pressure_range=None,
+        )
