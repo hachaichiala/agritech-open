@@ -2,6 +2,7 @@ import pytest
 
 from irrigation.calculations.pressure_loss import (
     calculate_hazen_williams_head_loss,
+    calculate_minor_head_loss,
 )
 
 
