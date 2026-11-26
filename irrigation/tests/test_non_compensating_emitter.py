@@ -751,3 +751,54 @@ def test_uniform_elevation_offset_changes_pressure_dependent_emitter_operation(
     assert shifted["head_loss_m"] == pytest.approx(
         sum(shifted["segment_head_losses_m"])
     )
+
+
+def test_non_monotonic_elevation_profile_applies_each_emitter_elevation_independently():
+    import math
+
+    elevations_m = [
+        0.0, 0.3, 0.1, 0.6, 0.2, 0.8,
+        0.4, 1.0, 0.5, 0.7, 0.2, -0.1,
+    ]
+    connection_k = 0.5
+    result = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_connection_k=connection_k,
+            emitter_elevations_m=elevations_m,
+        )
+    )
+
+    assert result["converged"] is True
+    assert result["emitter_flows_lph"] == pytest.approx([4.0] * 12)
+    assert result["segment_flows_lph"] == pytest.approx(
+        [4.0 * count for count in range(12, 0, -1)]
+    )
+
+    area_m2 = math.pi * 0.020 ** 2 / 4.0
+    cumulative_loss_m = 0.0
+
+    for index, elevation_m in enumerate(elevations_m):
+        flow_m3_s = (4.0 * (12 - index)) / 3_600_000.0
+        velocity_m_s = flow_m3_s / area_m2
+        friction_loss_m = (
+            10.67
+            * (30.0 / 12)
+            * flow_m3_s ** 1.852
+            / (150.0 ** 1.852 * 0.020 ** 4.871)
+        )
+        connection_loss_m = (
+            connection_k * velocity_m_s ** 2 / (2.0 * 9.80665)
+        )
+        cumulative_loss_m += friction_loss_m + connection_loss_m
+
+        expected_pressure_bar = (
+            2.0 - (cumulative_loss_m + elevation_m) * 0.0980665
+        )
+        assert result["emitter_pressures_bar"][index] == pytest.approx(
+            expected_pressure_bar, rel=1e-10, abs=1e-10
+        )
+
+    assert result["head_loss_m"] == pytest.approx(
+        sum(result["segment_head_losses_m"])
+    )
