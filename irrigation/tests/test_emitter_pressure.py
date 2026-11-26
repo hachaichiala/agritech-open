@@ -430,3 +430,28 @@ def test_pressure_analysis_passes_emitter_connection_k_to_model():
         with_local_losses["outlet_pressure_bar"]
         < baseline["outlet_pressure_bar"]
     )
+
+
+
+def test_emitter_pressure_analysis_accounts_for_lateral_elevation():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    common = dict(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+    horizontal = analyze_dripline_emitter_pressures(**common)
+    uphill = analyze_dripline_emitter_pressures(
+        **common, emitter_elevations_m=[0.5, 1.0, 1.5]
+    )
+    assert uphill["outlet_pressure_bar"] < horizontal["outlet_pressure_bar"]
+    assert uphill["head_loss_m"] == pytest.approx(horizontal["head_loss_m"])
+    assert uphill["emitter_pressures_bar"][-1] == pytest.approx(
+        horizontal["emitter_pressures_bar"][-1] - 1.5 * 0.0980665
+    )
