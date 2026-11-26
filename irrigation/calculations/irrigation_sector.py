@@ -115,6 +115,7 @@ def analyze_irrigation_sector(
     )
 
     return {
+        "inlet_pressure_bar": inlet_pressure_bar,
         "total_flow_lph": total_flow_lph,
         "lateral_flow_lph": lateral_flow_lph,
         "manifold_head_loss_m": manifold_head_loss_m,
