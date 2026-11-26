@@ -40,24 +40,37 @@ def analyze_pipe_diameter_decision(
     downstream payback and life-cycle calculations. Sensitivity analysis
     is optional because it requires a separately defined set of cases.
     """
+    if not isinstance(allow_unverified_pipe_specifications, bool):
+        raise ValueError("allow_unverified_pipe_specifications must be a boolean.")
+
     specifications_by_diameter = {}
     if pipe_specifications is not None:
         if not isinstance(pipe_specifications, (list, tuple)):
             raise ValueError("Pipe specifications must be a list of manufacturer records.")
+        required = {
+            "pipe_diameter_m", "outside_diameter_m", "wall_thickness_m",
+            "design_pressure_bar", "rated_pressure_bar", "material",
+        }
         for record in pipe_specifications:
             if not isinstance(record, dict):
                 raise ValueError("Each pipe specification must be a dictionary.")
-            required = {
-                "pipe_diameter_m", "outside_diameter_m", "wall_thickness_m",
-                "design_pressure_bar", "rated_pressure_bar", "material",
-            }
             if set(record) != required:
                 raise ValueError(
                     "Each pipe specification requires pipe_diameter_m, outside_diameter_m, "
                     "wall_thickness_m, design_pressure_bar, rated_pressure_bar, and material."
                 )
             identifier = record["pipe_diameter_m"]
-            if identifier in specifications_by_diameter:
+            if (
+                not isinstance(identifier, (int, float))
+                or isinstance(identifier, bool)
+                or not math.isfinite(identifier)
+                or identifier <= 0
+            ):
+                raise ValueError(
+                    "Pipe specification diameter must be a positive finite number."
+                )
+            diameter_key = float(identifier)
+            if diameter_key in specifications_by_diameter:
                 raise ValueError("Pipe specification diameters must be unique.")
             checked = analyze_pipe_specification(
                 outside_diameter_m=record["outside_diameter_m"],
@@ -67,14 +80,17 @@ def analyze_pipe_diameter_decision(
                 material=record["material"],
             )
             if not math.isclose(
-                float(identifier), checked["internal_diameter_m"],
+                diameter_key, checked["internal_diameter_m"],
                 rel_tol=1e-7, abs_tol=1e-9,
             ):
                 raise ValueError(
                     "pipe_diameter_m must equal the calculated manufacturer internal diameter."
                 )
-            specifications_by_diameter[identifier] = checked
-        if set(specifications_by_diameter) != set(pipe_diameters_m):
+            specifications_by_diameter[diameter_key] = checked
+        candidate_diameters = {
+            float(value) for value in pipe_diameters_m
+        }
+        if set(specifications_by_diameter) != candidate_diameters:
             raise ValueError(
                 "Pipe specifications must cover every candidate internal diameter exactly."
             )
