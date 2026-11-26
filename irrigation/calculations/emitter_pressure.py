@@ -417,10 +417,15 @@ def analyze_non_compensating_dripline(
             if (
                 not isinstance(elevation, (int, float))
                 or isinstance(elevation, bool)
-                or not math.isfinite(elevation)
             ):
                 raise ValueError("Emitter elevations must be finite numbers.")
-            elevations.append(float(elevation))
+            try:
+                elevation = float(elevation)
+            except (TypeError, ValueError, OverflowError):
+                raise ValueError("Emitter elevations must be finite numbers.") from None
+            if not math.isfinite(elevation):
+                raise ValueError("Emitter elevations must be finite numbers.")
+            elevations.append(elevation)
 
     segment_length = length_m / number_of_emitters
 
@@ -461,11 +466,16 @@ def analyze_non_compensating_dripline(
 
     for iteration_count in range(1, max_iterations + 1):
         pressures, _ = hydraulic_state(flows)
-        target_flows = [
-            reference_flow_lph
-            * (pressure / reference_pressure_bar) ** discharge_exponent
-            for pressure in pressures
-        ]
+        try:
+            target_flows = [
+                reference_flow_lph
+                * (pressure / reference_pressure_bar) ** discharge_exponent
+                for pressure in pressures
+            ]
+        except (OverflowError, ZeroDivisionError):
+            raise ValueError(
+                "Emitter discharge calculation produced an invalid value."
+            ) from None
         if any(not math.isfinite(flow) or flow <= 0 for flow in target_flows):
             raise ValueError("Calculated emitter flows must be positive and finite.")
         relative_change = max(
