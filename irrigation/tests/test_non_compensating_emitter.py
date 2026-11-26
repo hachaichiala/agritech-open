@@ -259,3 +259,60 @@ def test_non_compensating_emitter_curve_holds_at_each_converged_pressure():
     assert result["emitter_flows_lph"] == pytest.approx(
         expected_flows, rel=1e-7
     )
+
+
+def test_connection_k_losses_match_independent_velocity_head_calculation():
+    import math
+
+    connection_k = 0.75
+    diameter_m = 0.020
+    segment_length_m = 30.0 / 12
+    hazen_williams_c = 150.0
+    gravity_m_s2 = 9.80665
+    result = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_connection_k=connection_k,
+            emitter_elevations_m=[0.1 * i for i in range(12)],
+        )
+    )
+
+    area_m2 = math.pi * diameter_m ** 2 / 4.0
+    cumulative_loss_m = 0.0
+
+    for index in range(12):
+        downstream_flow_lph = 4.0 * (12 - index)
+        flow_m3_s = downstream_flow_lph / 3_600_000.0
+        velocity_m_s = flow_m3_s / area_m2
+
+        friction_loss_m = (
+            10.67
+            * segment_length_m
+            * flow_m3_s ** 1.852
+            / (
+                hazen_williams_c ** 1.852
+                * diameter_m ** 4.871
+            )
+        )
+        connection_loss_m = (
+            connection_k
+            * velocity_m_s ** 2
+            / (2.0 * gravity_m_s2)
+        )
+        expected_segment_loss_m = friction_loss_m + connection_loss_m
+        cumulative_loss_m += expected_segment_loss_m
+
+        assert result["segment_head_losses_m"][index] == pytest.approx(
+            expected_segment_loss_m, rel=1e-10, abs=1e-12
+        )
+
+        expected_pressure_bar = (
+            2.0
+            - (cumulative_loss_m + 0.1 * index) * 0.0980665
+        )
+        assert result["emitter_pressures_bar"][index] == pytest.approx(
+            expected_pressure_bar, rel=1e-10, abs=1e-10
+        )
+
+    assert result["head_loss_m"] == pytest.approx(cumulative_loss_m)
+
