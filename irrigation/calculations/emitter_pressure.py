@@ -319,6 +319,56 @@ def analyze_dripline_emitter_pressures(
     }
 
 
+
+def analyze_emitter_flow_distribution(emitter_flows_lph: list) -> dict:
+    """
+    Calculate hydraulic low-quarter distribution uniformity from emitter flows.
+
+    This metric describes hydraulic flow variation only. It excludes emitter
+    manufacturing variation, clogging, filtration effects, and field application.
+    The low quarter contains ceil(25% of emitters), with at least one emitter.
+    """
+    if not isinstance(emitter_flows_lph, (list, tuple)):
+        raise ValueError("Emitter flows must be a list or tuple.")
+    if not emitter_flows_lph:
+        raise ValueError("Emitter flow list cannot be empty.")
+
+    flows = []
+    for flow in emitter_flows_lph:
+        if (
+            not isinstance(flow, (int, float))
+            or isinstance(flow, bool)
+        ):
+            raise ValueError("All emitter flows must be positive finite numbers.")
+        try:
+            flow = float(flow)
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError("All emitter flows must be positive finite numbers.") from None
+        if not math.isfinite(flow) or flow <= 0:
+            raise ValueError("All emitter flows must be positive finite numbers.")
+        flows.append(flow)
+
+    ordered = sorted(flows)
+    low_quarter_count = max(1, math.ceil(len(ordered) * 0.25))
+    low_quarter_mean = sum(ordered[:low_quarter_count]) / low_quarter_count
+    overall_mean = sum(ordered) / len(ordered)
+    minimum_flow = ordered[0]
+    maximum_flow = ordered[-1]
+    du_lq = low_quarter_mean / overall_mean * 100.0
+    min_max_ratio = minimum_flow / maximum_flow * 100.0
+
+    return {
+        "total_emitters": len(ordered),
+        "minimum_flow_lph": minimum_flow,
+        "maximum_flow_lph": maximum_flow,
+        "mean_flow_lph": overall_mean,
+        "low_quarter_emitters": low_quarter_count,
+        "low_quarter_mean_flow_lph": low_quarter_mean,
+        "low_quarter_distribution_uniformity_percentage": du_lq,
+        "minimum_to_maximum_flow_ratio_percentage": min_max_ratio,
+    }
+
+
 def analyze_non_compensating_dripline(
     inlet_pressure_bar: float,
     length_m: float,
@@ -499,6 +549,7 @@ def analyze_non_compensating_dripline(
     pressures, segment_losses = hydraulic_state(flows)
     total_head_loss = sum(segment_losses)
     total_flow_lph = sum(flows)
+    flow_distribution = analyze_emitter_flow_distribution(flows)
     return {
         "emitter_flows_lph": flows,
         "emitter_pressures_bar": pressures,
@@ -509,7 +560,9 @@ def analyze_non_compensating_dripline(
         "total_flow_lph": total_flow_lph,
         "iterations": iteration_count,
         "converged": True,
-        "maximum_flow_lph": max(flows),
-        "minimum_flow_lph": min(flows),
-        "flow_uniformity_percentage": min(flows) / max(flows) * 100.0,
+        **flow_distribution,
+        # Backward-compatible alias for the previous minimum-to-maximum ratio.
+        "flow_uniformity_percentage": (
+            flow_distribution["minimum_to_maximum_flow_ratio_percentage"]
+        ),
     }
