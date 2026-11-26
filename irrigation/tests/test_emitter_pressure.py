@@ -274,3 +274,58 @@ def test_new_pressure_analysis_functions_are_publicly_exported():
 
     assert callable(analyze_dripline_emitter_pressures)
     assert callable(calculate_pressure_at_each_emitter)
+
+
+
+@pytest.mark.parametrize(
+    "emitter_pressures",
+    [[0.0, -0.1], [0.8, 0.0], [0.8, -0.2]],
+)
+def test_dripline_analysis_rejects_zero_or_negative_emitter_pressure(
+    monkeypatch,
+    emitter_pressures,
+):
+    import irrigation.calculations.emitter_pressure as pressure_module
+
+    monkeypatch.setattr(
+        pressure_module,
+        "calculate_pressure_at_each_emitter",
+        lambda **kwargs: emitter_pressures,
+    )
+
+    with pytest.raises(ValueError, match="Pressure reaches zero or below"):
+        pressure_module.analyze_dripline_emitter_pressures(
+            inlet_pressure_bar=2.0,
+            length_m=20,
+            number_of_emitters=len(emitter_pressures),
+            emitter_flow_lph=8,
+            diameter_m=0.016,
+            pressure_range=EmitterPressureRange(),
+        )
+
+
+def test_dripline_analysis_reports_positive_pressures_below_pc_range(
+    monkeypatch,
+):
+    import irrigation.calculations.emitter_pressure as pressure_module
+
+    monkeypatch.setattr(
+        pressure_module,
+        "calculate_pressure_at_each_emitter",
+        lambda **kwargs: [0.9, 0.7, 0.5],
+    )
+
+    result = pressure_module.analyze_dripline_emitter_pressures(
+        inlet_pressure_bar=2.0,
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["emitters_within_range"] == 0
+    assert result["emitters_outside_range"] == 3
+    assert result["compliance_percentage"] == pytest.approx(0.0)
+    assert result["all_emitters_within_range"] is False
+    assert result["all_pressures_within_range"] is False
