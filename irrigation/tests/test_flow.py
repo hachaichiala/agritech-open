@@ -26,7 +26,9 @@ def test_total_flow_negative_rate():
 def test_total_flow_invalid_type():
     with pytest.raises(ValueError):
         calculate_total_flow(10.5, 8)
-        def test_invalid_boolean_rate():
+
+
+def test_invalid_boolean_rate():
     with pytest.raises(ValueError):
         calculate_total_flow(10, True)
 
