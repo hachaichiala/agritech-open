@@ -698,3 +698,56 @@ def test_uniform_elevation_offset_shifts_pressure_without_changing_fixed_emitter
     assert shifted["outlet_pressure_bar"] - flat["outlet_pressure_bar"] == pytest.approx(
         expected_pressure_shift_bar
     )
+
+
+@pytest.mark.parametrize(
+    ("elevation_offset_m", "pressure_comparison", "flow_comparison", "loss_comparison"),
+    [
+        (1.0, "lower", "lower", "lower"),
+        (-1.0, "higher", "higher", "higher"),
+    ],
+)
+def test_uniform_elevation_offset_changes_pressure_dependent_emitter_operation(
+    elevation_offset_m,
+    pressure_comparison,
+    flow_comparison,
+    loss_comparison,
+):
+    flat = analyze_non_compensating_dripline(**_base())
+    shifted = analyze_non_compensating_dripline(
+        **_base(emitter_elevations_m=[elevation_offset_m] * 12)
+    )
+
+    assert shifted["converged"] is True
+
+    for shifted_pressure, flat_pressure in zip(
+        shifted["emitter_pressures_bar"],
+        flat["emitter_pressures_bar"],
+    ):
+        if pressure_comparison == "lower":
+            assert shifted_pressure < flat_pressure
+        else:
+            assert shifted_pressure > flat_pressure
+
+    for shifted_flow, flat_flow in zip(
+        shifted["emitter_flows_lph"],
+        flat["emitter_flows_lph"],
+    ):
+        if flow_comparison == "lower":
+            assert shifted_flow < flat_flow
+        else:
+            assert shifted_flow > flat_flow
+
+    if loss_comparison == "lower":
+        assert shifted["total_flow_lph"] < flat["total_flow_lph"]
+        assert shifted["head_loss_m"] < flat["head_loss_m"]
+    else:
+        assert shifted["total_flow_lph"] > flat["total_flow_lph"]
+        assert shifted["head_loss_m"] > flat["head_loss_m"]
+
+    assert shifted["total_flow_lph"] == pytest.approx(
+        sum(shifted["emitter_flows_lph"])
+    )
+    assert shifted["head_loss_m"] == pytest.approx(
+        sum(shifted["segment_head_losses_m"])
+    )
