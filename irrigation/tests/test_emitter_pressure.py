@@ -1,4 +1,4 @@
-
+analyze_emitter_pressure_distribution,
 import pytest
 
 from irrigation.calculations.emitter_pressure import (
@@ -128,4 +128,45 @@ def test_analyze_dripline_invalid_inlet_pressure():
             emitter_flow_lph=8,
             diameter_m=0.016,
             pressure_range=EmitterPressureRange(),
+        )
+
+def test_emitter_pressure_distribution_all_within_range():
+    result = analyze_emitter_pressure_distribution(
+        emitter_pressures_bar=[2.0, 1.8, 1.5, 1.2],
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["total_emitters"] == 4
+    assert result["emitters_within_range"] == 4
+    assert result["emitters_outside_range"] == 0
+    assert result["minimum_pressure_bar"] == 1.2
+    assert result["maximum_pressure_bar"] == 2.0
+    assert result["all_emitters_within_range"] is True
+
+
+def test_emitter_pressure_distribution_some_outside_range():
+    result = analyze_emitter_pressure_distribution(
+        emitter_pressures_bar=[2.0, 1.5, 0.8, 0.5],
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["total_emitters"] == 4
+    assert result["emitters_within_range"] == 2
+    assert result["emitters_outside_range"] == 2
+    assert result["all_emitters_within_range"] is False
+
+
+def test_emitter_pressure_distribution_empty_list():
+    with pytest.raises(ValueError):
+        analyze_emitter_pressure_distribution(
+            [],
+            EmitterPressureRange(),
+        )
+
+
+def test_emitter_pressure_distribution_invalid_pressure():
+    with pytest.raises(ValueError):
+        analyze_emitter_pressure_distribution(
+            [2.0, float("nan")],
+            EmitterPressureRange(),
         )
