@@ -50,8 +50,8 @@ def calculate_manifold_total_flow(
     _validate_lateral_count(number_of_laterals)
     _validate_positive_finite(lateral_flow_lph, "Lateral flow rate")
 
-    total_flow_lph = number_of_laterals * lateral_flow_lph
     try:
+        total_flow_lph = number_of_laterals * lateral_flow_lph
         finite_total_flow = math.isfinite(total_flow_lph)
     except OverflowError:
         finite_total_flow = False
@@ -81,14 +81,25 @@ def calculate_manifold_segment_head_losses(
     _validate_positive_finite(diameter_m, "Manifold diameter")
     _validate_positive_finite(hazen_williams_c, "Hazen-Williams coefficient")
 
-    segment_length_m = length_m / number_of_laterals
+    try:
+        segment_length_m = length_m / number_of_laterals
+    except OverflowError:
+        raise ValueError(
+            "Calculated manifold segment length must be finite."
+        ) from None
+
+    if not math.isfinite(segment_length_m) or segment_length_m <= 0:
+        raise ValueError(
+            "Calculated manifold segment length must be positive and finite."
+        )
+
     segment_losses_m = []
 
     for index in range(number_of_laterals):
         remaining_laterals = number_of_laterals - index
-        segment_flow_lph = remaining_laterals * lateral_flow_lph
 
         try:
+            segment_flow_lph = remaining_laterals * lateral_flow_lph
             finite_segment_flow = math.isfinite(segment_flow_lph)
         except OverflowError:
             finite_segment_flow = False
