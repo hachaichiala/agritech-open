@@ -4,6 +4,7 @@ from .pipe_economic_comparison import compare_pipe_diameter_economics
 from .pipe_diameter_payback import analyze_pipe_diameter_payback
 from .pipe_economic_sensitivity import analyze_pipe_economic_sensitivity
 from .pipe_lifecycle_cost import analyze_pipe_lifecycle_cost
+from .pipe_velocity import assess_pipe_velocity
 
 
 def analyze_pipe_diameter_decision(
@@ -25,6 +26,8 @@ def analyze_pipe_diameter_decision(
     residual_value_fraction=0.0,
     pump_efficiency_percent=None,
     sensitivity_cases=None,
+    minimum_velocity_m_s=0.6,
+    maximum_velocity_m_s=1.5,
 ):
     """Run hydraulic, operating, economic, payback, and life-cycle analyses.
 
@@ -85,10 +88,58 @@ def analyze_pipe_diameter_decision(
             pump_efficiency_percent=pump_efficiency_percent,
         )
 
-    recommended = lifecycle["recommendation"]
+    lifecycle_by_diameter = {
+        item["pipe_diameter_m"]: item
+        for item in lifecycle["scenarios"]
+        if item.get("status") == "calculated"
+    }
+    velocity_assessments = []
+    eligible_lifecycle = []
+    for scenario in economic["scenarios"]:
+        diameter = scenario["pipe_diameter_m"]
+        if scenario["economic_status"] != "calculated":
+            velocity_assessments.append({
+                "pipe_diameter_m": diameter,
+                "status": "not_calculated",
+                "assessment": "hydraulic_analysis_unavailable",
+            })
+            continue
+        operating_flow = scenario["analysis"]["pump_analysis"]["operating_point"]["flow_m3_s"]
+        velocity_result = assess_pipe_velocity(
+            flow_m3_s=operating_flow,
+            internal_diameter_m=diameter,
+            minimum_velocity_m_s=minimum_velocity_m_s,
+            maximum_velocity_m_s=maximum_velocity_m_s,
+        )
+        velocity_assessments.append({
+            "pipe_diameter_m": diameter,
+            **velocity_result,
+        })
+        if velocity_result["status"] == "within_range":
+            life = lifecycle_by_diameter.get(diameter)
+            if life is not None:
+                eligible_lifecycle.append(life)
+
+    best_lifecycle = min(
+        eligible_lifecycle,
+        key=lambda item: item["costs"]["net_present_life_cycle_cost_tnd"],
+    ) if eligible_lifecycle else None
     recommended_diameter = (
-        recommended["pipe_diameter_m"] if recommended else None
+        best_lifecycle["pipe_diameter_m"] if best_lifecycle else None
     )
+    recommendation = {
+        "pipe_diameter_m": recommended_diameter,
+        "net_present_life_cycle_cost_tnd": (
+            best_lifecycle["costs"]["net_present_life_cycle_cost_tnd"]
+            if best_lifecycle else None
+        ),
+        "basis": "lowest_net_present_life_cycle_cost_among_velocity_acceptable_diameters",
+        "status": "recommended" if best_lifecycle else "no_velocity_acceptable_diameter",
+        "velocity_limits_m_s": {
+            "minimum": minimum_velocity_m_s,
+            "maximum": maximum_velocity_m_s,
+        },
+    }
     selected = next(
         (
             item for item in economic["scenarios"]
@@ -111,15 +162,8 @@ def analyze_pipe_diameter_decision(
         missing_data.append("Defined sensitivity cases for uncertainty testing.")
 
     return {
-        "recommendation": {
-            "pipe_diameter_m": recommended_diameter,
-            "net_present_life_cycle_cost_tnd": (
-                recommended["net_present_life_cycle_cost_tnd"]
-                if recommended else None
-            ),
-            "basis": "lowest_net_present_life_cycle_cost",
-            "status": "recommended" if recommended else "no_feasible_diameter",
-        },
+        "recommendation": recommendation,
+        "velocity_assessments": velocity_assessments,
         "selected_hydraulic_result": selected,
         "hydraulic_and_economic_comparison": economic,
         "payback_analysis": payback,
@@ -127,7 +171,8 @@ def analyze_pipe_diameter_decision(
         "sensitivity_analysis": sensitivity,
         "decision_notes": [
             "Only diameters with a valid pump operating point enter economic ranking.",
-            "The recommendation minimizes modeled net present life-cycle cost.",
+            "The recommendation minimizes modeled net present life-cycle cost among alternatives within the configured velocity range.",
+            "Velocity limits are configurable screening values, not universal regulatory limits.",
             "The recommendation depends on user-supplied pump, pipe, tariff, and cost data.",
             "A recommendation is not a substitute for checking pressure ratings, water velocity, water hammer, and manufacturer limits.",
         ],
