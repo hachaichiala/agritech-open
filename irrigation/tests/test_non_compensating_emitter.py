@@ -1016,3 +1016,50 @@ def test_four_emitters_balance_flow_across_four_segments():
         expected_pressures_bar[-1], rel=1e-10
     )
 
+def test_five_emitters_balance_flow_across_five_segments():
+    result = analyze_non_compensating_dripline(
+        **_base(
+            number_of_emitters=5,
+            discharge_exponent=0.0,
+            emitter_connection_k=0.0,
+        )
+    )
+
+    assert result["converged"] is True
+    assert result["emitter_flows_lph"] == pytest.approx([4.0] * 5)
+    assert result["segment_flows_lph"] == pytest.approx(
+        [20.0, 16.0, 12.0, 8.0, 4.0]
+    )
+    assert result["total_flow_lph"] == pytest.approx(20.0)
+    assert len(result["segment_head_losses_m"]) == 5
+
+    expected_segment_losses_m = []
+    for flow_lph in (20.0, 16.0, 12.0, 8.0, 4.0):
+        flow_m3_s = flow_lph / 3_600_000.0
+        expected_segment_losses_m.append(
+            10.67
+            * (30.0 / 5)
+            * flow_m3_s ** 1.852
+            / (150.0 ** 1.852 * 0.020 ** 4.871)
+        )
+
+    assert result["segment_head_losses_m"] == pytest.approx(
+        expected_segment_losses_m, rel=1e-10
+    )
+    assert result["head_loss_m"] == pytest.approx(
+        sum(expected_segment_losses_m), rel=1e-10
+    )
+
+    cumulative_loss_m = 0.0
+    expected_pressures_bar = []
+    for segment_loss_m in expected_segment_losses_m:
+        cumulative_loss_m += segment_loss_m
+        expected_pressures_bar.append(2.0 - cumulative_loss_m * 0.0980665)
+
+    assert result["emitter_pressures_bar"] == pytest.approx(
+        expected_pressures_bar, rel=1e-10
+    )
+    assert result["outlet_pressure_bar"] == pytest.approx(
+        expected_pressures_bar[-1], rel=1e-10
+    )
+
