@@ -49,7 +49,7 @@ The velocity \(V_i\) is based on the lateral flow immediately upstream of that c
 
 The default coefficient is zero to preserve the earlier friction-only result. Supply a measured or manufacturer-supported K value for the specific connector geometry. Do not treat one generic K value as valid for every emitter, barb, take-off, or inline emitter design. The current interface uses one shared K value for all emitter connections along a lateral.
 
-The lateral model also does not yet include elevation changes along the lateral. For sloping laterals, pressure distribution must include the elevation head at each emitter.
+The pressure-distribution function accepts an optional `emitter_elevations_m` sequence with one elevation per emitter, measured in metres relative to the lateral inlet. Positive values represent uphill locations and reduce local pressure. Negative values represent downhill locations and increase local pressure. When omitted, all elevations default to zero, preserving the horizontal-lateral result. Elevation changes affect pressure distribution, not friction head loss. The detailed pressure-analysis function reports friction and connection head loss separately from the resulting emitter pressures.
 
 ## 3. Local losses in upstream pipes
 
