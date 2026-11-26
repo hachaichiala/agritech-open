@@ -59,29 +59,40 @@ def calculate_manifold_total_flow(
     return total_flow_lph
 
 
-def calculate_manifold_head_loss(
+def calculate_manifold_segment_head_losses(
     length_m: float,
     number_of_laterals: int,
     lateral_flow_lph: float,
     diameter_m: float,
     hazen_williams_c: float = 150,
-) -> float:
+) -> list:
     """
-    Calculate manifold friction loss in meters of water column.
+    Return friction head loss for each equal manifold segment, in meters.
 
-    The manifold is divided into equal segments. The first segment carries
-    the flow for all laterals, and flow decreases after each takeoff.
+    The first segment carries the flow for all laterals. Flow decreases
+    after each takeoff, so the final segment carries one lateral flow.
     """
     _validate_positive_finite(length_m, "Manifold length")
     _validate_lateral_count(number_of_laterals)
     _validate_positive_finite(lateral_flow_lph, "Lateral flow rate")
+    _validate_positive_finite(diameter_m, "Manifold diameter")
+    _validate_positive_finite(hazen_williams_c, "Hazen-Williams coefficient")
 
     segment_length_m = length_m / number_of_laterals
-    total_head_loss_m = 0.0
+    segment_losses_m = []
 
     for index in range(number_of_laterals):
         remaining_laterals = number_of_laterals - index
         segment_flow_lph = remaining_laterals * lateral_flow_lph
+
+        try:
+            finite_segment_flow = math.isfinite(segment_flow_lph)
+        except OverflowError:
+            finite_segment_flow = False
+
+        if not finite_segment_flow:
+            raise ValueError("Calculated manifold segment flow must be finite.")
+
         segment_flow_m3_s = liters_per_hour_to_cubic_meters_per_second(
             segment_flow_lph
         )
@@ -92,7 +103,33 @@ def calculate_manifold_head_loss(
             diameter_m=diameter_m,
             hazen_williams_c=hazen_williams_c,
         )
-        total_head_loss_m += segment_loss_m
+        segment_losses_m.append(segment_loss_m)
+
+    return segment_losses_m
+
+
+def calculate_manifold_head_loss(
+    length_m: float,
+    number_of_laterals: int,
+    lateral_flow_lph: float,
+    diameter_m: float,
+    hazen_williams_c: float = 150,
+) -> float:
+    """
+    Calculate total manifold friction loss in meters of water column.
+
+    The manifold is divided into equal segments. The first segment carries
+    the flow for all laterals, and flow decreases after each takeoff.
+    """
+    segment_losses_m = calculate_manifold_segment_head_losses(
+        length_m=length_m,
+        number_of_laterals=number_of_laterals,
+        lateral_flow_lph=lateral_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+    )
+
+    total_head_loss_m = sum(segment_losses_m)
 
     if not math.isfinite(total_head_loss_m):
         raise ValueError("Calculated manifold head loss must be finite.")
