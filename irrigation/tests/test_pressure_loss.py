@@ -98,3 +98,75 @@ def test_hazen_williams_rejects_non_numeric_or_unrepresentable_inputs(
         calculate_hazen_williams_head_loss(
             length, flow, diameter, coefficient
         )
+
+
+def test_minor_head_loss_matches_velocity_formula():
+    import math
+
+    flow = 0.001
+    diameter = 0.05
+    coefficient = 2.0
+    gravity = 9.80665
+    area = math.pi * diameter ** 2 / 4.0
+    velocity = flow / area
+    expected = coefficient * velocity ** 2 / (2.0 * gravity)
+
+    result = calculate_minor_head_loss(
+        flow, diameter, coefficient, gravity
+    )
+
+    assert result == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "flow, coefficient",
+    [
+        (0.0, 2.0),
+        (0.001, 0.0),
+    ],
+)
+def test_minor_head_loss_zero_flow_or_coefficient(flow, coefficient):
+    assert calculate_minor_head_loss(
+        flow, 0.05, coefficient
+    ) == 0.0
+
+
+@pytest.mark.parametrize(
+    "flow, diameter, coefficient, gravity",
+    [
+        (-0.001, 0.05, 1.0, 9.80665),
+        (0.001, 0.0, 1.0, 9.80665),
+        (0.001, 0.05, -1.0, 9.80665),
+        (0.001, 0.05, 1.0, 0.0),
+        (True, 0.05, 1.0, 9.80665),
+        (0.001, True, 1.0, 9.80665),
+        (0.001, 0.05, True, 9.80665),
+        (0.001, 0.05, 1.0, True),
+    ],
+)
+def test_minor_head_loss_rejects_invalid_inputs(
+    flow, diameter, coefficient, gravity
+):
+    with pytest.raises(ValueError):
+        calculate_minor_head_loss(
+            flow, diameter, coefficient, gravity
+        )
+
+
+@pytest.mark.parametrize(
+    "flow, diameter, coefficient, gravity",
+    [
+        (float("inf"), 0.05, 1.0, 9.80665),
+        (0.001, float("nan"), 1.0, 9.80665),
+        (0.001, 0.05, float("inf"), 9.80665),
+        (0.001, 0.05, 1.0, float("nan")),
+    ],
+)
+def test_minor_head_loss_rejects_non_finite_inputs(
+    flow, diameter, coefficient, gravity
+):
+    with pytest.raises(ValueError, match="finite number"):
+        calculate_minor_head_loss(
+            flow, diameter, coefficient, gravity
+        )
+
