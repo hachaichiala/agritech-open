@@ -84,3 +84,32 @@ Further hydraulic validation is required before
 using the results for field installation.
 
 
+## Pressure-Compensating Emitters
+
+The `emitter_pressure.py` module provides tools
+for checking pressure conditions in drip irrigation laterals
+using pressure-compensating (PC) emitters.
+
+Current features:
+
+- Configurable minimum and maximum operating pressure.
+- Inlet and outlet pressure validation.
+- Dripline head loss integration.
+- Automatic PC pressure range verification.
+
+Example assumptions:
+
+- Inlet pressure: 2 bar.
+- Temporary PC pressure range: 1 to 4 bar.
+- Horizontal dripline.
+- Uniform emitter spacing.
+
+Important:
+
+The default pressure range is temporary.
+Replace these values with the manufacturer's specifications
+before using the model for field design.
+
+The current model does not yet calculate pressure
+at every individual emitter.
+
