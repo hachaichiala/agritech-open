@@ -112,14 +112,20 @@ def find_pump_operating_point(pump_curve, system_curve) -> dict:
         ),
     })
 
+    pump_heads = [_interpolate(pump, flow) for flow in breakpoints]
+    system_heads = [_interpolate(system, flow) for flow in breakpoints]
     differences = [
-        _interpolate(pump, flow) - _interpolate(system, flow)
-        for flow in breakpoints
+        pump_head - system_head
+        for pump_head, system_head in zip(pump_heads, system_heads)
     ]
     intersections = []
 
-    for index, difference in enumerate(differences):
-        if math.isclose(difference, 0.0, abs_tol=1e-12):
+    for index, (pump_head, system_head) in enumerate(
+        zip(pump_heads, system_heads)
+    ):
+        if math.isclose(
+            pump_head, system_head, rel_tol=1e-12, abs_tol=0.0
+        ):
             intersections.append(breakpoints[index])
 
     for index in range(len(breakpoints) - 1):
