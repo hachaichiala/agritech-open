@@ -87,8 +87,8 @@ def test_pipe_specification_rejects_empty_material():
 @pytest.mark.parametrize(
     "outside, wall",
     [
-        (10**10000, 0.001),
-        (0.05, 10**10000),
+        (10**400, 0.001),
+        (0.05, 10**400),
     ],
 )
 def test_dimension_validation_rejects_unrepresentable_integers(outside, wall):
@@ -99,8 +99,8 @@ def test_dimension_validation_rejects_unrepresentable_integers(outside, wall):
 @pytest.mark.parametrize(
     "design, rated",
     [
-        (10**10000, 6),
-        (5, 10**10000),
+        (10**400, 6),
+        (5, 10**400),
         ("5", 6),
         (5, "6"),
     ],
