@@ -41,3 +41,7 @@ from .manifold import (
     calculate_manifold_segment_head_losses,
     calculate_pressure_at_each_lateral_takeoff,
 )
+
+from .irrigation_sector import (
+    analyze_irrigation_sector,
+)
