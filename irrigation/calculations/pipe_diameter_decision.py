@@ -1,5 +1,7 @@
 """Integrated hydraulic and economic decision support for pipe diameters."""
 
+import math
+
 from .pipe_economic_comparison import compare_pipe_diameter_economics
 from .pipe_diameter_payback import analyze_pipe_diameter_payback
 from .pipe_economic_sensitivity import analyze_pipe_economic_sensitivity
@@ -193,6 +195,10 @@ def analyze_pipe_diameter_decision(
     recommended_diameter = (
         best_lifecycle["pipe_diameter_m"] if best_lifecycle else None
     )
+    pressure_compliant_count = sum(
+        1 for item in pressure_assessments
+        if item.get("within_rating") is True
+    )
     recommendation = {
         "pipe_diameter_m": recommended_diameter,
         "net_present_life_cycle_cost_tnd": (
@@ -203,8 +209,9 @@ def analyze_pipe_diameter_decision(
         "status": (
     "recommended" if best_lifecycle else
     "no_feasible_diameter" if not successful else
+    "no_pressure_compliant_diameter" if pipe_specifications is not None and pressure_compliant_count == 0 else
     "no_velocity_acceptable_diameter" if not eligible_lifecycle else
-    "no_feasible_lifecycle_cost" 
+    "no_feasible_lifecycle_cost"
 ),
         "velocity_limits_m_s": {
             "minimum": minimum_velocity_m_s,
