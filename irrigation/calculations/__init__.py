@@ -72,3 +72,7 @@ from .operating_analysis import (
 from .sector_pump_compatibility import (
     analyze_sector_pump_compatibility,
 )
+
+from .system_curve import (
+    build_system_curve,
+)
