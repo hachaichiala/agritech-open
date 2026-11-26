@@ -38,4 +38,6 @@ from .emitter_pressure import (
 from .manifold import (
     calculate_manifold_total_flow,
     calculate_manifold_head_loss,
+    calculate_manifold_segment_head_losses,
+    calculate_pressure_at_each_lateral_takeoff,
 )
