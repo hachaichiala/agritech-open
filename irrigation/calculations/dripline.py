@@ -135,3 +135,55 @@ def calculate_dripline_segment_head_losses(
         segment_losses.append(segment_loss)
 
     return segment_losses
+
+def calculate_pressure_at_each_emitter(
+    inlet_pressure_bar: float,
+    length_m: float,
+    number_of_emitters: int,
+    emitter_flow_lph: float,
+    diameter_m: float,
+    hazen_williams_c: float = 150,
+) -> list:
+    """
+    Calculate pressure at each emitter along a horizontal dripline.
+
+    Pressure is calculated cumulatively from the inlet.
+    Each emitter is located at the end of an equal-length segment.
+
+    Returns:
+        List of emitter pressures in bar.
+    """
+
+    if (
+        not isinstance(inlet_pressure_bar, (int, float))
+        or isinstance(inlet_pressure_bar, bool)
+        or not math.isfinite(inlet_pressure_bar)
+        or inlet_pressure_bar <= 0
+    ):
+        raise ValueError(
+            "Inlet pressure must be a positive finite number."
+        )
+
+    segment_losses = calculate_dripline_segment_head_losses(
+        length_m=length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+    )
+
+    pressures = []
+    cumulative_loss_m = 0.0
+
+    for segment_loss_m in segment_losses:
+        cumulative_loss_m += segment_loss_m
+
+        pressure_loss_bar = cumulative_loss_m * 0.0980665
+
+        emitter_pressure_bar = (
+            inlet_pressure_bar - pressure_loss_bar
+        )
+
+        pressures.append(emitter_pressure_bar)
+
+    return pressures
