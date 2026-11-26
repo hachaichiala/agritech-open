@@ -42,6 +42,7 @@ def _analyze(**overrides):
         "discount_rate_percent": 5,
         "minimum_velocity_m_s": 0.1,
         "maximum_velocity_m_s": 1.5,
+        "allow_unverified_pipe_specifications": True,
     }
     args.update(overrides)
     return analyze_pipe_diameter_decision(**args)
@@ -190,8 +191,10 @@ def test_velocity_uses_manufacturer_calculated_internal_diameter():
 
 
 def test_missing_manufacturer_specifications_are_reported_as_unverified():
-    result = _analyze()
+    result = _analyze(allow_unverified_pipe_specifications=False)
     assert result["pipe_specifications_verified"] is False
+    assert result["recommendation"]["status"] == "unverified_pipe_specifications"
+    assert result["recommendation"]["pipe_diameter_m"] is None
     assert all(
         item["status"] == "not_provided"
         for item in result["pressure_assessments"]
