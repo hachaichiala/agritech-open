@@ -79,6 +79,40 @@ def test_sector_aggregates_emitter_pressure_compliance():
     )
 
 
+def test_sector_reports_lateral_pressure_and_head_loss_ranges():
+    result = _reference_sector()
+    laterals = result["laterals"]
+
+    inlet_pressures = [
+        lateral["inlet_pressure_bar"] for lateral in laterals
+    ]
+    outlet_pressures = [
+        lateral["outlet_pressure_bar"] for lateral in laterals
+    ]
+    head_losses = [
+        lateral["head_loss_m"] for lateral in laterals
+    ]
+
+    assert result["minimum_lateral_inlet_pressure_bar"] == pytest.approx(
+        min(inlet_pressures)
+    )
+    assert result["maximum_lateral_inlet_pressure_bar"] == pytest.approx(
+        max(inlet_pressures)
+    )
+    assert result["minimum_lateral_outlet_pressure_bar"] == pytest.approx(
+        min(outlet_pressures)
+    )
+    assert result["maximum_lateral_outlet_pressure_bar"] == pytest.approx(
+        max(outlet_pressures)
+    )
+    assert result["minimum_lateral_head_loss_m"] == pytest.approx(
+        min(head_losses)
+    )
+    assert result["maximum_lateral_head_loss_m"] == pytest.approx(
+        max(head_losses)
+    )
+
+
 def test_sector_reports_manifold_head_loss():
     from irrigation.calculations.manifold import calculate_manifold_head_loss
 
