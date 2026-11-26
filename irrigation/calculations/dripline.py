@@ -160,12 +160,15 @@ def calculate_pressure_at_each_emitter(
     diameter_m: float,
     hazen_williams_c: float = 150,
     emitter_connection_k: float = 0.0,
+    emitter_elevations_m: list | None = None,
 ) -> list:
     """
-    Calculate pressure at each emitter along a horizontal dripline.
+    Calculate pressure at each emitter, including lateral elevation changes.
 
     Pressure is calculated cumulatively from the inlet.
     Each emitter is located at the end of an equal-length segment.
+    emitter_elevations_m gives each emitter elevation relative to the inlet.
+    Positive values mean the emitter is higher than the inlet.
 
     Returns:
         List of emitter pressures in bar.
@@ -181,6 +184,36 @@ def calculate_pressure_at_each_emitter(
             "Inlet pressure must be a positive finite number."
         )
 
+    if emitter_elevations_m is None:
+        emitter_elevations_m = [0.0] * number_of_emitters
+    elif not isinstance(emitter_elevations_m, (list, tuple)):
+        raise ValueError("Emitter elevations must be a list or tuple.")
+    elif len(emitter_elevations_m) != number_of_emitters:
+        raise ValueError(
+            "Emitter elevations must contain one value per emitter."
+        )
+
+    normalized_elevations = []
+    for elevation in emitter_elevations_m:
+        if (
+            not isinstance(elevation, (int, float))
+            or isinstance(elevation, bool)
+        ):
+            raise ValueError(
+                "Emitter elevations must be finite numbers."
+            )
+        try:
+            elevation = float(elevation)
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError(
+                "Emitter elevations must be finite numbers."
+            ) from None
+        if not math.isfinite(elevation):
+            raise ValueError(
+                "Emitter elevations must be finite numbers."
+            )
+        normalized_elevations.append(elevation)
+
     segment_losses = calculate_dripline_segment_head_losses(
         length_m=length_m,
         number_of_emitters=number_of_emitters,
@@ -193,15 +226,13 @@ def calculate_pressure_at_each_emitter(
     pressures = []
     cumulative_loss_m = 0.0
 
-    for segment_loss_m in segment_losses:
+    for index, segment_loss_m in enumerate(segment_losses):
         cumulative_loss_m += segment_loss_m
-
-        pressure_loss_bar = cumulative_loss_m * 0.0980665
-
-        emitter_pressure_bar = (
-            inlet_pressure_bar - pressure_loss_bar
+        pressure_head_change_m = (
+            cumulative_loss_m + normalized_elevations[index]
         )
-
+        pressure_change_bar = pressure_head_change_m * 0.0980665
+        emitter_pressure_bar = inlet_pressure_bar - pressure_change_bar
         pressures.append(emitter_pressure_bar)
 
     return pressures
