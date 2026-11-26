@@ -182,3 +182,86 @@ def test_zero_discharge_exponent_segment_flows_match_constant_outlets():
     assert result["segment_flows_lph"] == pytest.approx(
         [4.0 * count for count in range(12, 0, -1)]
     )
+
+
+def test_uphill_profile_reduces_local_pressure_and_total_flow():
+    flat = analyze_non_compensating_dripline(**_base())
+    uphill = analyze_non_compensating_dripline(
+        **_base(emitter_elevations_m=[0.25 * i for i in range(12)])
+    )
+
+    assert all(
+        uphill_pressure < flat_pressure
+        for uphill_pressure, flat_pressure in zip(
+            uphill["emitter_pressures_bar"], flat["emitter_pressures_bar"]
+        )
+    )
+    assert uphill["total_flow_lph"] < flat["total_flow_lph"]
+
+
+def test_downhill_profile_increases_local_pressure_and_total_flow():
+    flat = analyze_non_compensating_dripline(**_base())
+    downhill = analyze_non_compensating_dripline(
+        **_base(emitter_elevations_m=[-0.25 * i for i in range(12)])
+    )
+
+    assert all(
+        downhill_pressure > flat_pressure
+        for downhill_pressure, flat_pressure in zip(
+            downhill["emitter_pressures_bar"], flat["emitter_pressures_bar"]
+        )
+    )
+    assert downhill["total_flow_lph"] > flat["total_flow_lph"]
+
+
+def test_emitter_connection_losses_reduce_pressure_and_flow():
+    without_connections = analyze_non_compensating_dripline(
+        **_base(emitter_connection_k=0.0)
+    )
+    with_connections = analyze_non_compensating_dripline(
+        **_base(emitter_connection_k=1.0)
+    )
+
+    assert all(
+        connected < plain
+        for connected, plain in zip(
+            with_connections["emitter_pressures_bar"],
+            without_connections["emitter_pressures_bar"],
+        )
+    )
+    assert with_connections["total_flow_lph"] < without_connections["total_flow_lph"]
+    assert with_connections["head_loss_m"] > without_connections["head_loss_m"]
+
+
+def test_zero_exponent_pressure_profile_matches_independent_head_balance():
+    result = analyze_non_compensating_dripline(
+        **_base(
+            discharge_exponent=0.0,
+            emitter_connection_k=0.75,
+            emitter_elevations_m=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5,
+                                  0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
+        )
+    )
+
+    cumulative_loss = 0.0
+    for index, segment_loss in enumerate(result["segment_head_losses_m"]):
+        cumulative_loss += segment_loss
+        expected_pressure = (
+            2.0
+            - (cumulative_loss + 0.1 * index) * 0.0980665
+        )
+        assert result["emitter_pressures_bar"][index] == pytest.approx(
+            expected_pressure, rel=1e-10, abs=1e-10
+        )
+
+
+def test_non_compensating_emitter_curve_holds_at_each_converged_pressure():
+    result = analyze_non_compensating_dripline(**_base())
+
+    expected_flows = [
+        4.0 * (pressure / 1.0) ** 0.5
+        for pressure in result["emitter_pressures_bar"]
+    ]
+    assert result["emitter_flows_lph"] == pytest.approx(
+        expected_flows, rel=1e-7
+    )
