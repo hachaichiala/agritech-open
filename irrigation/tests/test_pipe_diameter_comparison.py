@@ -80,3 +80,31 @@ def test_records_a_diameter_without_operating_point():
         for scenario in result["scenarios"]
     )
     assert all("error" in scenario for scenario in result["scenarios"])
+
+@pytest.mark.parametrize(
+    "invalid_diameter",
+    [
+        True,
+        float("nan"),
+        float("inf"),
+        10**400,
+        "0.05",
+    ],
+)
+def test_rejects_boolean_non_finite_huge_and_non_numeric_diameters(
+    invalid_diameter,
+):
+    with pytest.raises(ValueError, match="finite positive number"):
+        compare_pipe_diameters(
+            PUMP, SYSTEM, [0.04, invalid_diameter]
+        )
+
+
+def test_rejects_non_dictionary_system_parameters():
+    with pytest.raises(ValueError, match="must be a dictionary"):
+        compare_pipe_diameters(PUMP, [], [0.04, 0.063])
+
+
+def test_rejects_non_sequence_diameter_collection():
+    with pytest.raises(ValueError, match="At least two"):
+        compare_pipe_diameters(PUMP, SYSTEM, "0.04,0.063")
