@@ -41,3 +41,22 @@ def test_invalid_infinite_rate():
 def test_invalid_nan_rate():
     with pytest.raises(ValueError):
         calculate_total_flow(10, float("nan"))
+
+
+@pytest.mark.parametrize(
+    "number_of_drippers, flow_per_dripper",
+    [
+        (10**1000, 8),
+        (10, 10**1000),
+        (10**308, 1e308),
+    ],
+)
+def test_total_flow_rejects_overflowing_inputs_or_result(
+    number_of_drippers,
+    flow_per_dripper,
+):
+    with pytest.raises(ValueError, match="finite"):
+        calculate_total_flow(
+            number_of_drippers,
+            flow_per_dripper,
+        )
