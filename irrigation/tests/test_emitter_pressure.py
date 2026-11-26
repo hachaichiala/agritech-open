@@ -329,3 +329,41 @@ def test_dripline_analysis_reports_positive_pressures_below_pc_range(
     assert result["compliance_percentage"] == pytest.approx(0.0)
     assert result["all_emitters_within_range"] is False
     assert result["all_pressures_within_range"] is False
+
+
+
+def test_realistic_lateral_with_positive_pressure_below_pc_limit():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    result = analyze_dripline_emitter_pressures(
+        inlet_pressure_bar=1.2,
+        length_m=100,
+        number_of_emitters=10,
+        emitter_flow_lph=8,
+        diameter_m=0.006,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["minimum_pressure_bar"] > 0
+    assert result["minimum_pressure_bar"] < 1.0
+    assert result["emitters_outside_range"] > 0
+    assert result["compliance_percentage"] < 100.0
+    assert result["all_pressures_within_range"] is False
+
+
+def test_realistic_lateral_rejects_pressure_loss_exceeding_inlet_pressure():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    with pytest.raises(ValueError, match="Pressure reaches zero or below"):
+        analyze_dripline_emitter_pressures(
+            inlet_pressure_bar=0.4,
+            length_m=100,
+            number_of_emitters=10,
+            emitter_flow_lph=8,
+            diameter_m=0.005,
+            pressure_range=EmitterPressureRange(),
+        )
