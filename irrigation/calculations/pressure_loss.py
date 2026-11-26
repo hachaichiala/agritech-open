@@ -5,6 +5,19 @@ Hydraulic head loss calculations using the Hazen-Williams equation.
 import math
 
 
+def _finite_number(value, name):
+    """Convert a real numeric input to float and reject invalid values."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(f"{name} must be a finite number.")
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError(f"{name} must be a finite number.") from None
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be a finite number.")
+    return number
+
+
 def calculate_hazen_williams_head_loss(
     length_m: float,
     flow_m3_s: float,
@@ -20,21 +33,12 @@ def calculate_hazen_williams_head_loss(
         Diameter: meters
         Head loss: meters of water column
     """
-
-    inputs = {
-        "Length": length_m,
-        "Flow rate": flow_m3_s,
-        "Diameter": diameter_m,
-        "Hazen-Williams coefficient": hazen_williams_c,
-    }
-
-    for name, value in inputs.items():
-        if (
-            not isinstance(value, (int, float))
-            or isinstance(value, bool)
-            or not math.isfinite(value)
-        ):
-            raise ValueError(f"{name} must be a finite number.")
+    length_m = _finite_number(length_m, "Length")
+    flow_m3_s = _finite_number(flow_m3_s, "Flow rate")
+    diameter_m = _finite_number(diameter_m, "Diameter")
+    hazen_williams_c = _finite_number(
+        hazen_williams_c, "Hazen-Williams coefficient"
+    )
 
     if length_m < 0:
         raise ValueError("Length cannot be negative.")
@@ -61,10 +65,10 @@ def calculate_hazen_williams_head_loss(
                 * (diameter_m ** 4.871)
             )
         )
-    except (OverflowError, ZeroDivisionError) as exc:
+    except (OverflowError, ZeroDivisionError):
         raise ValueError(
             "Calculated head loss must be a finite number."
-        ) from exc
+        ) from None
 
     if not math.isfinite(head_loss):
         raise ValueError(
