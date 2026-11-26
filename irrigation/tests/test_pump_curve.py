@@ -133,3 +133,22 @@ def test_public_system_curve_validator_rejects_invalid_data(curve):
 
     with pytest.raises(ValueError):
         validate_system_curve(curve)
+
+def test_does_not_treat_small_absolute_head_difference_as_intersection():
+    with pytest.raises(ValueError, match="no intersection"):
+        find_pump_operating_point(
+            pump_curve=[(0.0, 1e-13), (1.0, 1e-13)],
+            system_curve=[(1.0, 0.0), (2.0, 0.0)],
+        )
+
+
+def test_finds_real_intersection_at_small_head_values():
+    result = find_pump_operating_point(
+        pump_curve=[(0.0, 2e-13), (1.0, 0.0)],
+        system_curve=[(0.0, 0.0), (1.0, 2e-13)],
+    )
+
+    assert result["flow_m3_s"] == pytest.approx(0.5)
+    assert result["pump_head_m"] == pytest.approx(1e-13)
+    assert result["system_head_m"] == pytest.approx(1e-13)
+
