@@ -62,4 +62,25 @@ Status
 
 Planned. No calculation code has been implemented yet.
 
+## Dripline Hydraulic Calculations
+
+The `dripline.py` module estimates friction head loss
+along a drip irrigation lateral.
+
+Current assumptions:
+
+- Emitters are uniformly spaced.
+- Emitter discharge is constant.
+- Pipe diameter is constant.
+- Flow decreases after each emitter.
+- The pipe is horizontal.
+- Minor losses and elevation changes are excluded.
+
+The calculation uses the Hazen-Williams equation
+for each pipe segment.
+
+The current model is an initial approximation.
+Further hydraulic validation is required before
+using the results for field installation.
+
 
