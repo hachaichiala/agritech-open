@@ -27,8 +27,8 @@ def calculate_pipe_internal_diameter(
 
     The wall thickness is radial, so the calculation subtracts twice its value.
     """
-    _positive_finite(outside_diameter_m, "Outside diameter")
-    _positive_finite(wall_thickness_m, "Wall thickness")
+    outside_diameter_m = _positive_finite(outside_diameter_m, "Outside diameter")
+    wall_thickness_m = _positive_finite(wall_thickness_m, "Wall thickness")
 
     internal_diameter_m = outside_diameter_m - 2 * wall_thickness_m
     if not math.isfinite(internal_diameter_m) or internal_diameter_m <= 0:
@@ -48,8 +48,8 @@ def assess_pipe_pressure_rating(
     pressure where water hammer is relevant. rated_pressure_bar must be the
     manufacturer's applicable rating at the actual service temperature.
     """
-    _positive_finite(design_pressure_bar, "Design pressure")
-    _positive_finite(rated_pressure_bar, "Rated pressure")
+    design_pressure_bar = _positive_finite(design_pressure_bar, "Design pressure")
+    rated_pressure_bar = _positive_finite(rated_pressure_bar, "Rated pressure")
 
     within_rating = design_pressure_bar <= rated_pressure_bar
     return {
