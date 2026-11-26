@@ -151,3 +151,52 @@ def analyze_dripline_pressure(
     result["head_loss_m"] = head_loss_m
 
     return result
+
+def analyze_emitter_pressure_distribution(
+    emitter_pressures_bar: list,
+    pressure_range: EmitterPressureRange,
+) -> dict:
+    """
+    Analyze pressure distribution across all emitters.
+
+    Returns aggregate pressure statistics and PC compliance.
+    """
+
+    if not isinstance(emitter_pressures_bar, list):
+        raise ValueError("Emitter pressures must be a list.")
+
+    if not emitter_pressures_bar:
+        raise ValueError("Emitter pressure list cannot be empty.")
+
+    if not isinstance(pressure_range, EmitterPressureRange):
+        raise ValueError("Invalid emitter pressure range.")
+
+    for pressure in emitter_pressures_bar:
+        if (
+            not isinstance(pressure, (int, float))
+            or isinstance(pressure, bool)
+            or not math.isfinite(pressure)
+            or pressure <= 0
+        ):
+            raise ValueError(
+                "All emitter pressures must be positive finite numbers."
+            )
+
+    pressures_within_range = [
+        is_pressure_in_compensation_range(
+            pressure, pressure_range
+        )
+        for pressure in emitter_pressures_bar
+    ]
+
+    within_count = sum(pressures_within_range)
+    total_count = len(emitter_pressures_bar)
+
+    return {
+        "total_emitters": total_count,
+        "emitters_within_range": within_count,
+        "emitters_outside_range": total_count - within_count,
+        "minimum_pressure_bar": min(emitter_pressures_bar),
+        "maximum_pressure_bar": max(emitter_pressures_bar),
+        "all_emitters_within_range": within_count == total_count,
+    }
