@@ -316,3 +316,60 @@ def test_connection_k_losses_match_independent_velocity_head_calculation():
 
     assert result["head_loss_m"] == pytest.approx(cumulative_loss_m)
 
+
+def test_doubling_lateral_length_doubles_friction_loss_with_fixed_outlet_flows():
+    common = _base(
+        discharge_exponent=0.0,
+        emitter_connection_k=0.0,
+    )
+    standard = analyze_non_compensating_dripline(**common)
+    doubled = analyze_non_compensating_dripline(
+        **{**common, "length_m": common["length_m"] * 2.0}
+    )
+
+    assert doubled["emitter_flows_lph"] == pytest.approx(
+        standard["emitter_flows_lph"]
+    )
+    assert doubled["segment_flows_lph"] == pytest.approx(
+        standard["segment_flows_lph"]
+    )
+    assert doubled["head_loss_m"] == pytest.approx(
+        standard["head_loss_m"] * 2.0, rel=1e-10
+    )
+    assert doubled["head_loss_m"] == pytest.approx(
+        sum(doubled["segment_head_losses_m"]), rel=1e-12
+    )
+    assert doubled["outlet_pressure_bar"] < standard["outlet_pressure_bar"]
+
+
+def test_larger_lateral_diameter_matches_hazen_williams_scaling():
+    standard_diameter_m = 0.020
+    larger_diameter_m = 0.025
+    common = _base(
+        discharge_exponent=0.0,
+        emitter_connection_k=0.0,
+        diameter_m=standard_diameter_m,
+    )
+    standard = analyze_non_compensating_dripline(**common)
+    larger = analyze_non_compensating_dripline(
+        **{**common, "diameter_m": larger_diameter_m}
+    )
+
+    expected_loss_ratio = (
+        standard_diameter_m / larger_diameter_m
+    ) ** 4.871
+
+    assert larger["emitter_flows_lph"] == pytest.approx(
+        standard["emitter_flows_lph"]
+    )
+    assert larger["segment_flows_lph"] == pytest.approx(
+        standard["segment_flows_lph"]
+    )
+    assert larger["head_loss_m"] / standard["head_loss_m"] == pytest.approx(
+        expected_loss_ratio, rel=1e-10
+    )
+    assert larger["head_loss_m"] == pytest.approx(
+        sum(larger["segment_head_losses_m"]), rel=1e-12
+    )
+    assert larger["outlet_pressure_bar"] > standard["outlet_pressure_bar"]
+
