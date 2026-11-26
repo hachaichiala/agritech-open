@@ -60,3 +60,16 @@ def test_total_flow_rejects_overflowing_inputs_or_result(
             number_of_drippers,
             flow_per_dripper,
         )
+
+@pytest.mark.parametrize(
+    "number_of_drippers",
+    [
+        -1,
+        True,
+        "10",
+    ],
+)
+def test_total_flow_rejects_invalid_dripper_counts(number_of_drippers):
+    with pytest.raises(ValueError):
+        calculate_total_flow(number_of_drippers, 8)
+
