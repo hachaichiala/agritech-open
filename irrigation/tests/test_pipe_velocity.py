@@ -73,3 +73,24 @@ def test_assessment_rejects_boolean_and_non_finite_inputs(
     with pytest.raises(ValueError):
         assess_pipe_velocity(flow, diameter, minimum, maximum)
 
+@pytest.mark.parametrize(
+    "flow, diameter",
+    [
+        (True, 0.05),
+        (0.001, True),
+        (float("inf"), 0.05),
+        (0.001, float("inf")),
+        (10**400, 0.05),
+        (0.001, 10**400),
+    ],
+)
+def test_calculation_rejects_boolean_infinite_and_unrepresentable_inputs(
+    flow, diameter
+):
+    with pytest.raises(ValueError):
+        calculate_pipe_velocity(flow, diameter)
+
+
+def test_rejects_non_finite_calculated_velocity():
+    with pytest.raises(ValueError, match="velocity must be finite"):
+        calculate_pipe_velocity(1e308, 1e-100)
