@@ -56,9 +56,12 @@ def test_integrates_hydraulic_economic_payback_and_lifecycle_results():
 def test_recommendation_matches_lowest_lifecycle_cost():
     result = _analyze()
     lowest = min(
-        item for item in result["life_cycle_analysis"]["scenarios"]
-        if item["status"] == "calculated"
-    , key=lambda item: item["costs"]["net_present_life_cycle_cost_tnd"])
+        (
+            item for item in result["life_cycle_analysis"]["scenarios"]
+            if item["status"] == "calculated"
+        ),
+        key=lambda item: item["costs"]["net_present_life_cycle_cost_tnd"],
+    )
     assert result["recommendation"]["pipe_diameter_m"] == lowest["pipe_diameter_m"]
 
 
