@@ -366,7 +366,7 @@ def test_connection_losses_use_remaining_downstream_flow_at_each_segment():
 
 @pytest.mark.parametrize(
     "invalid_k",
-    [-1, float("inf"), float("nan"), True],
+    [-1, float("inf"), float("nan"), True, 10 ** 1000],
 )
 def test_invalid_emitter_connection_k_is_rejected(invalid_k):
     with pytest.raises(ValueError, match="Emitter connection K"):
