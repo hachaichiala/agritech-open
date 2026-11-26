@@ -160,6 +160,8 @@ def analyze_pipe_diameter_decision(
         missing_data.append("Expected annual pipe maintenance cost.")
     if sensitivity is None:
         missing_data.append("Defined sensitivity cases for uncertainty testing.")
+    if minimum_velocity_m_s == 0.6 and maximum_velocity_m_s == 1.5:
+        missing_data.append("Confirm project-specific minimum and maximum pipe velocity limits.")
 
     return {
         "recommendation": recommendation,
@@ -173,6 +175,7 @@ def analyze_pipe_diameter_decision(
             "Only diameters with a valid pump operating point enter economic ranking.",
             "The recommendation minimizes modeled net present life-cycle cost among alternatives within the configured velocity range.",
             "Velocity limits are configurable screening values, not universal regulatory limits.",
+            "Economic sensitivity cases do not replace the velocity eligibility check applied to the baseline recommendation.",
             "The recommendation depends on user-supplied pump, pipe, tariff, and cost data.",
             "A recommendation is not a substitute for checking pressure ratings, water velocity, water hammer, and manufacturer limits.",
         ],
