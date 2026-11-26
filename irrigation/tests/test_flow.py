@@ -73,3 +73,14 @@ def test_total_flow_rejects_invalid_dripper_counts(number_of_drippers):
     with pytest.raises(ValueError):
         calculate_total_flow(number_of_drippers, 8)
 
+@pytest.mark.parametrize(
+    "flow_per_dripper",
+    [
+        0.0,
+        -0.0,
+    ],
+)
+def test_total_flow_rejects_zero_dripper_rate(flow_per_dripper):
+    with pytest.raises(ValueError, match="positive"):
+        calculate_total_flow(10, flow_per_dripper)
+
