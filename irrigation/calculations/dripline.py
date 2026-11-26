@@ -5,7 +5,7 @@ Pressure loss calculations for drip irrigation laterals.
 
 import math
 
-from .pressure_loss import calculate_hazen_williams_head_loss
+from .pressure_loss import (\n    calculate_hazen_williams_head_loss,\n    calculate_minor_head_loss,\n)
 from .units import liters_per_hour_to_cubic_meters_per_second
 
 
@@ -15,13 +15,14 @@ def calculate_dripline_head_loss(
     emitter_flow_lph: float,
     diameter_m: float,
     hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
 ) -> float:
     """
-    Calculate friction head loss along a dripline.
+    Calculate friction and emitter-connection local losses.
 
-    Emitters are uniformly spaced.
-    Each segment ends at an emitter.
-    Flow decreases after each emitter.
+    Emitters are uniformly spaced. Each segment ends at one emitter.
+    One connection loss is applied at each segment end, using the
+    segment's upstream flow and lateral velocity. K is geometry-specific.
 
     Returns:
         Total head loss in meters of water column.
@@ -50,27 +51,15 @@ def calculate_dripline_head_loss(
     ):
         raise ValueError("Emitter flow must be a positive finite number.")
 
-    segment_length = length_m / number_of_emitters
-    total_head_loss = 0.0
-
-    for index in range(number_of_emitters):
-        remaining_emitters = number_of_emitters - index
-        flow_lph = remaining_emitters * emitter_flow_lph
-
-        flow_m3_s = liters_per_hour_to_cubic_meters_per_second(
-            flow_lph
-        )
-
-        segment_loss = calculate_hazen_williams_head_loss(
-            length_m=segment_length,
-            flow_m3_s=flow_m3_s,
-            diameter_m=diameter_m,
-            hazen_williams_c=hazen_williams_c,
-        )
-
-        total_head_loss += segment_loss
-
-    return total_head_loss
+    segment_losses = calculate_dripline_segment_head_losses(
+        length_m=length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
+    )
+    return sum(segment_losses)
 
 def calculate_dripline_segment_head_losses(
     length_m: float,
@@ -78,13 +67,14 @@ def calculate_dripline_segment_head_losses(
     emitter_flow_lph: float,
     diameter_m: float,
     hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
 ) -> list:
     """
-    Calculate head loss for each dripline segment.
+    Calculate friction plus one emitter-connection loss per segment.
 
-    Emitters are uniformly spaced.
-    Each segment ends at an emitter.
-    Flow decreases after each emitter.
+    Emitters are uniformly spaced. Each segment ends at one emitter.
+    Connection K is applied once at that segment's downstream end,
+    using the flow and velocity immediately upstream of the connection.
 
     Returns:
         List of head losses in meters of water column.
@@ -113,6 +103,16 @@ def calculate_dripline_segment_head_losses(
     ):
         raise ValueError("Emitter flow must be a positive finite number.")
 
+    if (
+        not isinstance(emitter_connection_k, (int, float))
+        or isinstance(emitter_connection_k, bool)
+        or not math.isfinite(emitter_connection_k)
+        or emitter_connection_k < 0
+    ):
+        raise ValueError(
+            "Emitter connection K must be a non-negative finite number."
+        )
+
     segment_length = length_m / number_of_emitters
     segment_losses = []
 
@@ -132,7 +132,12 @@ def calculate_dripline_segment_head_losses(
             hazen_williams_c=hazen_williams_c,
         )
 
-        segment_losses.append(segment_loss)
+        connection_loss = calculate_minor_head_loss(
+            flow_m3_s=flow_m3_s,
+            diameter_m=diameter_m,
+            loss_coefficient=emitter_connection_k,
+        )
+        segment_losses.append(segment_loss + connection_loss)
 
     return segment_losses
 
@@ -143,6 +148,7 @@ def calculate_pressure_at_each_emitter(
     emitter_flow_lph: float,
     diameter_m: float,
     hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
 ) -> list:
     """
     Calculate pressure at each emitter along a horizontal dripline.
@@ -170,6 +176,7 @@ def calculate_pressure_at_each_emitter(
         emitter_flow_lph=emitter_flow_lph,
         diameter_m=diameter_m,
         hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
     )
 
     pressures = []
