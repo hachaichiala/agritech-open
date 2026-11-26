@@ -4,6 +4,7 @@ import pytest
 from irrigation.calculations.emitter_pressure import (
     EmitterPressureRange,
     is_pressure_in_compensation_range,
+    check_dripline_pressure,
 )
 
 
@@ -65,7 +66,8 @@ def test_invalid_pressure(pressure):
         is_pressure_in_compensation_range(
             pressure, EmitterPressureRange()
         )
-        
+
+
 def test_dripline_pressure_within_range():
     result = check_dripline_pressure(
         inlet_pressure_bar=2.0,
