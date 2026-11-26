@@ -257,7 +257,15 @@ def analyze_dripline_emitter_pressures(
         pressure_range=pressure_range,
     )
 
-    head_loss_m = (
+    head_loss_m = calculate_dripline_head_loss(
+        length_m=length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=diameter_m,
+        hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
+    )
+    pressure_head_change_m = (
         inlet_pressure_bar - emitter_pressures_bar[-1]
     ) / BAR_PER_METER_WATER
 
@@ -269,6 +277,7 @@ def analyze_dripline_emitter_pressures(
         "inlet_pressure_bar": inlet_pressure_bar,
         "outlet_pressure_bar": emitter_pressures_bar[-1],
         "head_loss_m": head_loss_m,
+        "pressure_head_change_m": pressure_head_change_m,
         "emitter_pressures_bar": emitter_pressures_bar,
         "inlet_within_range": inlet_within_range,
         **distribution,
