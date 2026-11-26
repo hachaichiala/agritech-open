@@ -39,5 +39,17 @@ Status
 
 
 Testing framework planned.
+def test_invalid_boolean_rate():
+    with pytest.raises(ValueError):
+        calculate_total_flow(10, True)
 
+
+def test_invalid_infinite_rate():
+    with pytest.raises(ValueError):
+        calculate_total_flow(10, float("inf"))
+
+
+def test_invalid_nan_rate():
+    with pytest.raises(ValueError):
+        calculate_total_flow(10, float("nan"))
 
