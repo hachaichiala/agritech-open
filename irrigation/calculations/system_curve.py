@@ -56,7 +56,17 @@ def build_system_curve(
     if local_k < 0:
         raise ValueError("Local loss coefficient cannot be negative.")
 
-    area = math.pi * diameter ** 2 / 4.0
+    try:
+        area = math.pi * diameter ** 2 / 4.0
+    except OverflowError:
+        raise ValueError(
+            "Calculated pipe cross-sectional area must be finite and positive."
+        ) from None
+    if not math.isfinite(area) or area <= 0:
+        raise ValueError(
+            "Calculated pipe cross-sectional area must be finite and positive."
+        )
+
     curve = []
     details = []
 
@@ -68,6 +78,8 @@ def build_system_curve(
             hazen_williams_c=hw_c,
         )
         velocity = flow / area
+        if not math.isfinite(velocity):
+            raise ValueError("Calculated pipe velocity must be finite.")
         try:
             local = local_k * velocity ** 2 / (2.0 * 9.80665)
         except OverflowError as exc:
