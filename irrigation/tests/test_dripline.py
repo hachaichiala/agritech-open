@@ -208,3 +208,81 @@ def test_invalid_inlet_pressure():
             diameter_m=0.016,
         )
 
+
+def test_larger_diameter_reduces_dripline_head_loss():
+    common = {
+        "length_m": 100,
+        "number_of_emitters": 40,
+        "emitter_flow_lph": 4,
+    }
+
+    small_diameter_loss = calculate_dripline_head_loss(
+        **common,
+        diameter_m=0.016,
+    )
+    large_diameter_loss = calculate_dripline_head_loss(
+        **common,
+        diameter_m=0.020,
+    )
+
+    assert large_diameter_loss < small_diameter_loss
+
+
+def test_higher_emitter_flow_increases_dripline_head_loss():
+    common = {
+        "length_m": 100,
+        "number_of_emitters": 40,
+        "diameter_m": 0.020,
+    }
+
+    low_flow_loss = calculate_dripline_head_loss(
+        **common,
+        emitter_flow_lph=2,
+    )
+    high_flow_loss = calculate_dripline_head_loss(
+        **common,
+        emitter_flow_lph=4,
+    )
+
+    assert high_flow_loss > low_flow_loss
+
+
+def test_more_emitters_increase_dripline_head_loss():
+    common = {
+        "length_m": 100,
+        "emitter_flow_lph": 4,
+        "diameter_m": 0.020,
+    }
+
+    fewer_emitters_loss = calculate_dripline_head_loss(
+        **common,
+        number_of_emitters=20,
+    )
+    more_emitters_loss = calculate_dripline_head_loss(
+        **common,
+        number_of_emitters=40,
+    )
+
+    assert more_emitters_loss > fewer_emitters_loss
+
+
+def test_higher_emitter_flow_reduces_pressure_at_first_and_last_emitters():
+    common = {
+        "inlet_pressure_bar": 2.0,
+        "length_m": 100,
+        "number_of_emitters": 40,
+        "diameter_m": 0.020,
+    }
+
+    low_flow_pressures = calculate_pressure_at_each_emitter(
+        **common,
+        emitter_flow_lph=2,
+    )
+    high_flow_pressures = calculate_pressure_at_each_emitter(
+        **common,
+        emitter_flow_lph=4,
+    )
+
+    assert high_flow_pressures[0] < low_flow_pressures[0]
+    assert high_flow_pressures[-1] < low_flow_pressures[-1]
+
