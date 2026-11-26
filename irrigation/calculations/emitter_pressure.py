@@ -144,8 +144,9 @@ def analyze_dripline_pressure(
     diameter_m: float,
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
 ) -> dict:
-    """Calculate dripline head loss and check endpoint PC pressure limits."""
+    """Calculate dripline losses and check endpoint PC pressure limits."""
 
     if not isinstance(pressure_range, EmitterPressureRange):
         raise ValueError("Invalid emitter pressure range.")
@@ -156,6 +157,7 @@ def analyze_dripline_pressure(
         emitter_flow_lph=emitter_flow_lph,
         diameter_m=diameter_m,
         hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
     )
 
     result = check_dripline_pressure(
@@ -217,6 +219,7 @@ def analyze_dripline_emitter_pressures(
     diameter_m: float,
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
+    emitter_connection_k: float = 0.0,
 ) -> dict:
     """
     Calculate and assess pressure at every emitter along a dripline.
@@ -238,6 +241,7 @@ def analyze_dripline_emitter_pressures(
         emitter_flow_lph=emitter_flow_lph,
         diameter_m=diameter_m,
         hazen_williams_c=hazen_williams_c,
+        emitter_connection_k=emitter_connection_k,
     )
 
     if any(pressure <= 0 for pressure in emitter_pressures_bar):
