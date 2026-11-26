@@ -85,3 +85,23 @@ def test_returns_model_assumptions():
 def test_rejects_unrepresentable_pipe_cross_section_area(diameter):
     with pytest.raises(ValueError, match="cross-sectional area"):
         _build(upstream_pipe_diameter_m=diameter)
+
+
+def test_rejects_unrepresentable_pipe_velocity():
+    with pytest.raises(ValueError, match="pipe velocity"):
+        _build(
+            flow_rates_m3_s=[0.0, 0.001],
+            upstream_pipe_length_m=0.0,
+            upstream_pipe_diameter_m=1e-160,
+            local_loss_coefficient=0.0,
+        )
+
+
+def test_rejects_overflow_in_local_head_loss_calculation():
+    with pytest.raises(ValueError, match="local head loss"):
+        _build(
+            flow_rates_m3_s=[0.0, 1e154],
+            upstream_pipe_length_m=0.0,
+            upstream_pipe_diameter_m=1.0,
+            local_loss_coefficient=1.0,
+        )
