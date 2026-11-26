@@ -60,3 +60,20 @@ def test_boolean_diameter():
         calculate_hazen_williams_head_loss(
             100, 0.001, True, 150
         )
+
+
+@pytest.mark.parametrize(
+    "length, flow, diameter, coefficient",
+    [
+        (100, 1e308, 0.05, 150),
+        (100, 0.001, 1e-100, 150),
+    ],
+)
+def test_hazen_williams_rejects_unrepresentable_results(
+    length, flow, diameter, coefficient
+):
+    with pytest.raises(ValueError, match="finite"):
+        calculate_hazen_williams_head_loss(
+            length, flow, diameter, coefficient
+        )
+
