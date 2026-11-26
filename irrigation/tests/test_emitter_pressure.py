@@ -367,3 +367,40 @@ def test_realistic_lateral_rejects_pressure_loss_exceeding_inlet_pressure():
             diameter_m=0.005,
             pressure_range=EmitterPressureRange(),
         )
+
+
+def test_reference_100m_lateral_emitter_pressure_distribution():
+    """Validate pressure at all 200 emitters in the reference lateral."""
+    from irrigation.calculations.emitter_pressure import (
+        analyze_dripline_emitter_pressures,
+    )
+
+    result = analyze_dripline_emitter_pressures(
+        inlet_pressure_bar=1.5,
+        length_m=100,
+        number_of_emitters=200,
+        emitter_flow_lph=2,
+        diameter_m=0.016,
+        hazen_williams_c=150,
+        pressure_range=EmitterPressureRange(
+            minimum_bar=1.0,
+            maximum_bar=4.0,
+        ),
+    )
+
+    pressures = result["emitter_pressures_bar"]
+
+    assert result["total_emitters"] == 200
+    assert len(pressures) == 200
+    assert pressures[0] == pytest.approx(1.4987028, rel=1e-6)
+    assert pressures[-1] == pytest.approx(1.4083823, rel=1e-6)
+    assert all(
+        pressures[index] > pressures[index + 1]
+        for index in range(len(pressures) - 1)
+    )
+    assert result["head_loss_m"] == pytest.approx(0.9342403, rel=1e-6)
+    assert result["emitters_within_range"] == 200
+    assert result["emitters_outside_range"] == 0
+    assert result["compliance_percentage"] == pytest.approx(100.0)
+    assert result["all_pressures_within_range"] is True
+
