@@ -2,6 +2,8 @@
 Flow rate calculations for drip irrigation networks.
 """
 
+import math
+
 
 def calculate_total_flow(
     number_of_drippers: int,
@@ -27,8 +29,11 @@ def calculate_total_flow(
     if number_of_drippers <= 0:
         raise ValueError("Number of drippers must be positive.")
 
-    if not isinstance(flow_per_dripper_lph, (int, float)):
+    if not isinstance(flow_per_dripper_lph, (int, float)) or isinstance(flow_per_dripper_lph, bool):
         raise ValueError("Dripper flow rate must be numeric.")
+
+    if isinstance(flow_per_dripper_lph, float) and not math.isfinite(flow_per_dripper_lph):
+        raise ValueError("Dripper flow rate must be finite.")
 
     if flow_per_dripper_lph <= 0:
         raise ValueError("Dripper flow rate must be positive.")
