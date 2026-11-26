@@ -49,3 +49,27 @@ def test_rejects_invalid_flow_or_diameter(flow, diameter):
 def test_rejects_invalid_velocity_limits():
     with pytest.raises(ValueError, match="lower than"):
         assess_pipe_velocity(0.001, 0.05, 1.5, 0.6)
+
+@pytest.mark.parametrize("diameter", [1e-200, 1e200])
+def test_rejects_unrepresentable_cross_sectional_areas(diameter):
+    with pytest.raises(ValueError, match="cross-sectional area"):
+        calculate_pipe_velocity(0.001, diameter)
+
+
+@pytest.mark.parametrize(
+    "flow, diameter, minimum, maximum",
+    [
+        (True, 0.05, 0.1, 1.0),
+        (0.001, True, 0.1, 1.0),
+        (0.001, 0.05, True, 1.0),
+        (0.001, 0.05, 0.1, False),
+        (0.001, 0.05, float("nan"), 1.0),
+        (0.001, 0.05, 0.1, float("inf")),
+    ],
+)
+def test_assessment_rejects_boolean_and_non_finite_inputs(
+    flow, diameter, minimum, maximum
+):
+    with pytest.raises(ValueError):
+        assess_pipe_velocity(flow, diameter, minimum, maximum)
+
