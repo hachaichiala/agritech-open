@@ -482,11 +482,18 @@ def analyze_non_compensating_dripline(
     def hydraulic_state(flows_lph):
         pressures = []
         segment_losses = []
+        segment_flows_lph = [0.0] * number_of_emitters
         cumulative_loss = 0.0
+
+        downstream_flow_lph = 0.0
+        for index in range(number_of_emitters - 1, -1, -1):
+            downstream_flow_lph += flows_lph[index]
+            segment_flows_lph[index] = downstream_flow_lph
+
         for index, flow in enumerate(flows_lph):
-            downstream_flow_lph = sum(flows_lph[index:])
+            segment_flow_lph = segment_flows_lph[index]
             flow_m3_s = liters_per_hour_to_cubic_meters_per_second(
-                downstream_flow_lph
+                segment_flow_lph
             )
             friction = calculate_hazen_williams_head_loss(
                 segment_length, flow_m3_s, diameter_m, hazen_williams_c
@@ -508,14 +515,14 @@ def analyze_non_compensating_dripline(
                     "lateral dimensions, emitter data, and elevations."
                 )
             pressures.append(pressure)
-        return pressures, segment_losses
+        return pressures, segment_losses, segment_flows_lph
 
     flows = [reference_flow_lph] * number_of_emitters
     converged = False
     iteration_count = 0
 
     for iteration_count in range(1, max_iterations + 1):
-        pressures, _ = hydraulic_state(flows)
+        pressures, _, _ = hydraulic_state(flows)
         try:
             target_flows = [
                 reference_flow_lph
@@ -546,13 +553,14 @@ def analyze_non_compensating_dripline(
             f"Emitter flow calculation did not converge within {max_iterations} iterations."
         )
 
-    pressures, segment_losses = hydraulic_state(flows)
+    pressures, segment_losses, segment_flows_lph = hydraulic_state(flows)
     total_head_loss = sum(segment_losses)
     total_flow_lph = sum(flows)
     flow_distribution = analyze_emitter_flow_distribution(flows)
     return {
         "emitter_flows_lph": flows,
         "emitter_pressures_bar": pressures,
+        "segment_flows_lph": segment_flows_lph,
         "segment_head_losses_m": segment_losses,
         "head_loss_m": total_head_loss,
         "inlet_pressure_bar": inlet_pressure_bar,
