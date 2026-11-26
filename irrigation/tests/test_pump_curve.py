@@ -50,3 +50,60 @@ def test_rejects_curves_with_multiple_intersections():
             pump_curve=[(0.0, 10.0), (1.0, 10.0)],
             system_curve=[(0.0, 10.0), (1.0, 10.0)],
         )
+
+
+
+def test_validates_and_normalizes_pump_curve_points():
+    from irrigation.calculations.pump_curve import validate_pump_curve
+
+    assert validate_pump_curve([(0, 40), (0.5, 20)]) == [
+        (0.0, 40.0),
+        (0.5, 20.0),
+    ]
+
+
+def test_validates_system_curve_points():
+    from irrigation.calculations.pump_curve import validate_system_curve
+
+    assert validate_system_curve([(0, 5), (0.5, 15)]) == [
+        (0.0, 5.0),
+        (0.5, 15.0),
+    ]
+
+
+@pytest.mark.parametrize(
+    "curve",
+    [
+        None,
+        [],
+        [(0.0, 10.0)],
+        [(0.0, 10.0), (1.0, 20.0), (0.5, 30.0)],
+        [(0.0, 10.0), (1.0, 10.0), (2.0, 9.0)],
+        [(0.0, True), (1.0, 10.0)],
+        [(0.0, 10**1000), (1.0, 10.0)],
+        [(0.0, -1.0), (1.0, 10.0)],
+    ],
+)
+def test_public_pump_curve_validator_rejects_invalid_data(curve):
+    from irrigation.calculations.pump_curve import validate_pump_curve
+
+    with pytest.raises(ValueError):
+        validate_pump_curve(curve)
+
+
+@pytest.mark.parametrize(
+    "curve",
+    [
+        None,
+        [],
+        [(0.0, 10.0)],
+        [(0.0, 10.0), (1.0, 5.0)],
+        [(0.0, 10.0), (0.0, 20.0)],
+        [(0.0, float("inf")), (1.0, 20.0)],
+    ],
+)
+def test_public_system_curve_validator_rejects_invalid_data(curve):
+    from irrigation.calculations.pump_curve import validate_system_curve
+
+    with pytest.raises(ValueError):
+        validate_system_curve(curve)
