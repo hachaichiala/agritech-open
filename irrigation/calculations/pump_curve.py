@@ -163,7 +163,7 @@ def find_pump_operating_point(pump_curve, system_curve) -> dict:
     operating_flow = unique_intersections[0]
     pump_head = _interpolate(pump, operating_flow)
     system_head = _interpolate(system, operating_flow)
-    operating_head = (pump_head + system_head) / 2
+    operating_head = pump_head / 2 + system_head / 2
 
     return {
         "flow_m3_s": operating_flow,
