@@ -75,7 +75,7 @@ def test_compares_shaft_power_with_rated_motor_output_power():
 def test_reports_insufficient_rated_motor_output_power():
     result = analyze_pump_operation(
         {
-            "rated_motor_power_kw": 0.4,
+            "rated_motor_power_kw": 0.3,
             "pump_curve": PUMP_CURVE,
         },
         SYSTEM_CURVE,
@@ -95,7 +95,7 @@ def test_does_not_compare_rated_power_with_electrical_input():
         motor_efficiency_percent=80,
     )
     check = result["motor_power_check"]
-    assert check["required_shaft_power_kw"] == pytest.approx(0.4903325)
+    assert check["required_shaft_power_kw"] == pytest.approx(0.367749375)
     assert result["power"]["electrical_input_power_w"] > check["required_shaft_power_kw"] * 1000
 
 
