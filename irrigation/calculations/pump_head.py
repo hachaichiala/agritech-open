@@ -8,7 +8,10 @@ to determine the required pump total dynamic head.
 
 import math
 
-from .units import bar_to_meters_of_water
+from .units import (
+    bar_to_meters_of_water,
+    liters_per_hour_to_cubic_meters_per_second,
+)
 
 
 def _is_finite_number(value):
@@ -87,3 +90,40 @@ def calculate_required_pump_head(
         "upstream_local_losses_m": upstream_local_losses_m,
         "total_dynamic_head_m": total_head_m,
     }
+
+
+
+def calculate_sector_pump_requirement(
+    sector_analysis: dict,
+    static_elevation_difference_m: float,
+    upstream_friction_losses_m: float = 0.0,
+    upstream_local_losses_m: float = 0.0,
+) -> dict:
+    """
+    Combine an irrigation-sector analysis with upstream system losses.
+
+    The sector analysis must contain total_flow_lph and inlet_pressure_bar.
+    The latter is the required pressure at the sector manifold inlet.
+    """
+    if not isinstance(sector_analysis, dict):
+        raise ValueError("Sector analysis must be a dictionary.")
+
+    total_flow_lph = sector_analysis.get("total_flow_lph")
+    inlet_pressure_bar = sector_analysis.get("inlet_pressure_bar")
+
+    if not _is_finite_number(total_flow_lph) or total_flow_lph <= 0:
+        raise ValueError(
+            "Sector total flow must be positive and finite."
+        )
+
+    result = calculate_required_pump_head(
+        static_elevation_difference_m=static_elevation_difference_m,
+        required_sector_inlet_pressure_bar=inlet_pressure_bar,
+        upstream_friction_losses_m=upstream_friction_losses_m,
+        upstream_local_losses_m=upstream_local_losses_m,
+    )
+    result["sector_total_flow_lph"] = total_flow_lph
+    result["sector_total_flow_m3_s"] = (
+        liters_per_hour_to_cubic_meters_per_second(total_flow_lph)
+    )
+    return result
