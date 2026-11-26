@@ -77,3 +77,7 @@ from .sector_pump_compatibility import (
 from .system_curve import (
     build_system_curve,
 )
+
+from .pipe_diameter_comparison import (
+    compare_pipe_diameters,
+)
