@@ -35,7 +35,7 @@ The current lateral model divides the lateral into equal-length segments. It ass
 
 For each segment, the engine applies Hazen-Williams to the remaining downstream flow, then sums segment losses. Pressure at each emitter is calculated by accumulating the segment losses from the inlet.
 
-This is a constant-discharge approximation. It is suitable for a first hydraulic estimate when emitter discharge is effectively constant, such as within the operating range of a pressure-compensating emitter. The current implementation does not solve the pressure-discharge relationship iteratively for non-pressure-compensating emitters.
+This is a constant-discharge approximation. It is suitable for a first hydraulic estimate when emitter discharge is effectively constant, such as within the operating range of a pressure-compensating emitter. The current constant-discharge functions do not solve the pressure-discharge relationship. A separate `analyze_non_compensating_dripline` function provides an iterative model for non-pressure-compensating emitters using the manufacturer equation q = q_ref × (P/P_ref)^x. The caller must supply the reference discharge, reference pressure, and exponent from the selected emitter's technical data. The solver recalculates each segment flow from the current and downstream emitter discharges until the relative flow change meets the configured tolerance. It reports convergence, iteration count, individual emitter flows and pressures, total lateral flow, and a minimum-to-maximum flow ratio expressed as a percentage. The original constant-discharge API remains unchanged.
 
 ### 2.1 Emitter-connection local losses
 
