@@ -239,6 +239,23 @@ python -m pytest irrigation/tests -v
 
 ## Development Status
 
+### Pressure-Compensating Emitters
+
+The irrigation engine includes preliminary pressure
+validation for pressure-compensating (PC) emitters.
+
+Features:
+- Configurable emitter operating pressure range.
+- Inlet and outlet pressure calculations.
+- Dripline friction loss integration.
+- Automatic pressure compensation range checks.
+
+The default pressure range (1 to 4 bar) is temporary
+and must be replaced with manufacturer specifications.
+
+Current automated test suite: 67 tests.
+
+
 Version: 0.1.0
 
 The irrigation calculation engine is under active development.
