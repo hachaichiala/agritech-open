@@ -211,3 +211,117 @@ def test_manifold_segment_losses_reject_invalid_inputs(
             diameter_m=diameter,
             hazen_williams_c=coefficient,
         )
+
+
+
+def test_pressure_at_each_lateral_takeoff_decreases_along_manifold():
+    from irrigation.calculations.manifold import (
+        calculate_pressure_at_each_lateral_takeoff,
+    )
+
+    pressures = calculate_pressure_at_each_lateral_takeoff(
+        inlet_pressure_bar=2.0,
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    assert len(pressures) == 4
+    assert all(pressure > 0 for pressure in pressures)
+    assert all(
+        earlier > later
+        for earlier, later in zip(pressures, pressures[1:])
+    )
+
+
+def test_last_lateral_pressure_matches_total_manifold_head_loss():
+    from irrigation.calculations.manifold import (
+        calculate_pressure_at_each_lateral_takeoff,
+    )
+    from irrigation.calculations.units import meters_of_water_to_bar
+
+    inlet_pressure_bar = 2.0
+    total_loss_m = calculate_manifold_head_loss(
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+    pressures = calculate_pressure_at_each_lateral_takeoff(
+        inlet_pressure_bar=inlet_pressure_bar,
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    expected_last_pressure = (
+        inlet_pressure_bar - meters_of_water_to_bar(total_loss_m)
+    )
+    assert pressures[-1] == pytest.approx(expected_last_pressure)
+
+
+def test_first_lateral_pressure_uses_only_first_segment_loss():
+    from irrigation.calculations.manifold import (
+        calculate_manifold_segment_head_losses,
+        calculate_pressure_at_each_lateral_takeoff,
+    )
+    from irrigation.calculations.units import meters_of_water_to_bar
+
+    inlet_pressure_bar = 2.0
+    segment_losses = calculate_manifold_segment_head_losses(
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+    pressures = calculate_pressure_at_each_lateral_takeoff(
+        inlet_pressure_bar=inlet_pressure_bar,
+        length_m=30,
+        number_of_laterals=4,
+        lateral_flow_lph=800,
+        diameter_m=0.04,
+        hazen_williams_c=150,
+    )
+
+    assert pressures[0] == pytest.approx(
+        inlet_pressure_bar - meters_of_water_to_bar(segment_losses[0])
+    )
+
+
+@pytest.mark.parametrize("inlet_pressure", [0, -1, float("inf"), True])
+def test_pressure_at_lateral_takeoffs_rejects_invalid_inlet_pressure(
+    inlet_pressure,
+):
+    from irrigation.calculations.manifold import (
+        calculate_pressure_at_each_lateral_takeoff,
+    )
+
+    with pytest.raises(ValueError):
+        calculate_pressure_at_each_lateral_takeoff(
+            inlet_pressure_bar=inlet_pressure,
+            length_m=30,
+            number_of_laterals=4,
+            lateral_flow_lph=800,
+            diameter_m=0.04,
+        )
+
+
+def test_pressure_at_lateral_takeoffs_rejects_insufficient_inlet_pressure():
+    from irrigation.calculations.manifold import (
+        calculate_pressure_at_each_lateral_takeoff,
+    )
+
+    with pytest.raises(ValueError, match="reaches zero or below"):
+        calculate_pressure_at_each_lateral_takeoff(
+            inlet_pressure_bar=0.001,
+            length_m=30,
+            number_of_laterals=4,
+            lateral_flow_lph=800,
+            diameter_m=0.04,
+        )
