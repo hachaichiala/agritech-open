@@ -65,3 +65,27 @@ def test_invalid_pressure(pressure):
         is_pressure_in_compensation_range(
             pressure, EmitterPressureRange()
         )
+        
+def test_dripline_pressure_within_range():
+    result = check_dripline_pressure(
+        inlet_pressure_bar=2.0,
+        head_loss_m=2.0,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["inlet_pressure_bar"] == 2.0
+    assert result["outlet_pressure_bar"] == pytest.approx(1.803867)
+    assert result["inlet_within_range"] is True
+    assert result["outlet_within_range"] is True
+    assert result["uniform_compensation"] is True
+
+
+def test_dripline_outlet_below_compensation_range():
+    result = check_dripline_pressure(
+        inlet_pressure_bar=2.0,
+        head_loss_m=15.0,
+        pressure_range=EmitterPressureRange(),
+    )
+
+    assert result["outlet_within_range"] is False
+    assert result["uniform_compensation"] is False
