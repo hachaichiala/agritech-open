@@ -1,4 +1,6 @@
-
+from irrigation.calculations.dripline import (
+    calculate_dripline_segment_head_losses,
+)
 import pytest
 
 from irrigation.calculations.dripline import (
@@ -83,4 +85,54 @@ def test_invalid_length_and_emitter_flow(length, emitter_flow):
             emitter_flow_lph=emitter_flow,
             diameter_m=0.016,
         )
+
+def test_dripline_segment_head_losses_count():
+    losses = calculate_dripline_segment_head_losses(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert len(losses) == 3
+
+
+def test_dripline_segment_head_losses_are_positive():
+    losses = calculate_dripline_segment_head_losses(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert all(loss > 0 for loss in losses)
+
+
+def test_segment_losses_sum_matches_total_head_loss():
+    losses = calculate_dripline_segment_head_losses(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    total_loss = calculate_dripline_head_loss(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert sum(losses) == pytest.approx(total_loss)
+
+
+def test_segment_losses_decrease_along_dripline():
+    losses = calculate_dripline_segment_head_losses(
+        length_m=20,
+        number_of_emitters=3,
+        emitter_flow_lph=8,
+        diameter_m=0.016,
+    )
+
+    assert losses[0] > losses[1] > losses[2]
 
