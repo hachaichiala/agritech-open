@@ -7,7 +7,9 @@ for pressure-compensating drip emitters.
 import math
 from dataclasses import dataclass
 
-from .dripline import calculate_dripline_head_loss
+from .dripline import (
+    calculate_dripline_head_loss,
+)
 
 
 @dataclass(frozen=True)
@@ -48,11 +50,9 @@ def is_pressure_in_compensation_range(
         not isinstance(pressure_bar, (int, float))
         or isinstance(pressure_bar, bool)
         or not math.isfinite(pressure_bar)
+        or pressure_bar <= 0
     ):
-        raise ValueError("Pressure must be a finite number.")
-
-    if pressure_bar <= 0:
-        raise ValueError("Pressure must be positive.")
+        raise ValueError("Pressure must be a positive finite number.")
 
     if not isinstance(pressure_range, EmitterPressureRange):
         raise ValueError("Invalid emitter pressure range.")
@@ -124,15 +124,7 @@ def analyze_dripline_pressure(
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
 ) -> dict:
-    """
-    Calculate dripline head loss and check PC pressure limits.
-
-    Assumptions:
-    - Horizontal dripline.
-    - Uniform emitter spacing.
-    - Constant emitter discharge.
-    - Constant internal pipe diameter.
-    """
+    """Calculate dripline head loss and check PC pressure limits."""
 
     head_loss_m = calculate_dripline_head_loss(
         length_m=length_m,
@@ -152,15 +144,12 @@ def analyze_dripline_pressure(
 
     return result
 
+
 def analyze_emitter_pressure_distribution(
     emitter_pressures_bar: list,
     pressure_range: EmitterPressureRange,
 ) -> dict:
-    """
-    Analyze pressure distribution across all emitters.
-
-    Returns aggregate pressure statistics and PC compliance.
-    """
+    """Analyze pressure distribution across all emitters."""
 
     if not isinstance(emitter_pressures_bar, list):
         raise ValueError("Emitter pressures must be a list.")
@@ -200,7 +189,3 @@ def analyze_emitter_pressure_distribution(
         "maximum_pressure_bar": max(emitter_pressures_bar),
         "all_emitters_within_range": within_count == total_count,
     }
-def analyze_emitter_pressure_distribution(
-    emitter_pressures_bar: list,
-    pressure_range: EmitterPressureRange,
-) -> dict:
