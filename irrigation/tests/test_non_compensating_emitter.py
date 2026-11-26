@@ -373,3 +373,51 @@ def test_larger_lateral_diameter_matches_hazen_williams_scaling():
     )
     assert larger["outlet_pressure_bar"] > standard["outlet_pressure_bar"]
 
+
+def test_longer_lateral_reduces_coupled_emitter_flow_and_outlet_pressure():
+    standard = analyze_non_compensating_dripline(**_base())
+    longer = analyze_non_compensating_dripline(
+        **_base(length_m=60.0)
+    )
+
+    assert longer["converged"] is True
+    assert longer["total_flow_lph"] < standard["total_flow_lph"]
+    assert longer["outlet_pressure_bar"] < standard["outlet_pressure_bar"]
+    assert longer["head_loss_m"] > standard["head_loss_m"]
+    assert longer["total_flow_lph"] == pytest.approx(
+        sum(longer["emitter_flows_lph"])
+    )
+    assert longer["segment_flows_lph"] == pytest.approx(
+        [
+            sum(longer["emitter_flows_lph"][index:])
+            for index in range(len(longer["emitter_flows_lph"]))
+        ]
+    )
+    assert longer["head_loss_m"] == pytest.approx(
+        sum(longer["segment_head_losses_m"])
+    )
+
+
+def test_larger_diameter_improves_coupled_emitter_flow_and_pressure():
+    standard = analyze_non_compensating_dripline(**_base())
+    larger = analyze_non_compensating_dripline(
+        **_base(diameter_m=0.025)
+    )
+
+    assert larger["converged"] is True
+    assert larger["total_flow_lph"] > standard["total_flow_lph"]
+    assert larger["outlet_pressure_bar"] > standard["outlet_pressure_bar"]
+    assert larger["head_loss_m"] < standard["head_loss_m"]
+    assert larger["total_flow_lph"] == pytest.approx(
+        sum(larger["emitter_flows_lph"])
+    )
+    assert larger["segment_flows_lph"] == pytest.approx(
+        [
+            sum(larger["emitter_flows_lph"][index:])
+            for index in range(len(larger["emitter_flows_lph"]))
+        ]
+    )
+    assert larger["head_loss_m"] == pytest.approx(
+        sum(larger["segment_head_losses_m"])
+    )
+
