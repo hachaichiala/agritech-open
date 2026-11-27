@@ -67,3 +67,43 @@ def test_zero_length_pipe_has_no_friction_but_keeps_local_losses():
     for detail in result["flow_details"]:
         assert detail["friction_loss_m"] == 0.0
         assert detail["local_loss_m"] > 0.0
+
+
+
+def test_friction_loss_scales_with_flow_to_hazen_williams_exponent():
+    base = _build(flow_rates_m3_s=[0.0002, 0.0004])
+    doubled = _build(flow_rates_m3_s=[0.0004, 0.0008])
+
+    for base_detail, doubled_detail in zip(
+        base["flow_details"], doubled["flow_details"]
+    ):
+        assert doubled_detail["friction_loss_m"] == pytest.approx(
+            base_detail["friction_loss_m"] * 2.0 ** 1.852
+        )
+
+
+def test_local_loss_scales_with_square_of_flow():
+    base = _build(flow_rates_m3_s=[0.0002, 0.0004])
+    doubled = _build(flow_rates_m3_s=[0.0004, 0.0008])
+
+    for base_detail, doubled_detail in zip(
+        base["flow_details"], doubled["flow_details"]
+    ):
+        assert doubled_detail["local_loss_m"] == pytest.approx(
+            base_detail["local_loss_m"] * 4.0
+        )
+
+
+def test_local_loss_scales_linearly_with_loss_coefficient():
+    base = _build(local_loss_coefficient=2.5)
+    doubled_k = _build(local_loss_coefficient=5.0)
+
+    for base_detail, doubled_detail in zip(
+        base["flow_details"], doubled_k["flow_details"]
+    ):
+        assert doubled_detail["local_loss_m"] == pytest.approx(
+            base_detail["local_loss_m"] * 2.0
+        )
+        assert doubled_detail["friction_loss_m"] == pytest.approx(
+            base_detail["friction_loss_m"]
+        )
