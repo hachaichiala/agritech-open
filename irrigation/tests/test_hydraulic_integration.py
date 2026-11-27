@@ -68,7 +68,7 @@ def test_tree_zone_to_lateral_and_pump_requirement(
     )
 
 
-from irrigation.calculations.dripline import calculate_pressure_at_each_emitter
+from irrigation.calculations.dripline import (\n    calculate_pressure_at_each_emitter,\n    calculate_dripline_segment_head_losses,\n)
 from irrigation.calculations.system_curve import build_system_curve
 
 
@@ -153,4 +153,71 @@ def test_lateral_emitter_pressure_and_system_curve_integration(
     )
     assert system_curve["system_curve"][0][1] == pytest.approx(
         integrated_head
+    )
+
+
+def test_elevation_profile_to_emitter_pressure_and_pump_requirement():
+    number_of_emitters = 5
+    emitter_flow_lph = 8.0
+    lateral_length_m = 50.0
+    lateral_diameter_m = 0.020
+    target_pressure_bar = 1.2
+    elevations_m = [0.0, 0.3, 0.8, 0.4, 1.1]
+
+    segment_losses_m = calculate_dripline_segment_head_losses(
+        length_m=lateral_length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=lateral_diameter_m,
+    )
+
+    cumulative_loss_m = 0.0
+    required_pressure_heads_m = []
+    for loss_m, elevation_m in zip(segment_losses_m, elevations_m):
+        cumulative_loss_m += loss_m
+        required_pressure_heads_m.append(cumulative_loss_m + elevation_m)
+
+    required_inlet_pressure_bar = (
+        target_pressure_bar
+        + max(required_pressure_heads_m) * 0.0980665
+    )
+
+    emitter_pressures = calculate_pressure_at_each_emitter(
+        inlet_pressure_bar=required_inlet_pressure_bar,
+        length_m=lateral_length_m,
+        number_of_emitters=number_of_emitters,
+        emitter_flow_lph=emitter_flow_lph,
+        diameter_m=lateral_diameter_m,
+        emitter_elevations_m=elevations_m,
+    )
+
+    assert len(emitter_pressures) == number_of_emitters
+    assert min(emitter_pressures) == pytest.approx(target_pressure_bar)
+    assert all(
+        pressure >= target_pressure_bar - 1e-9
+        for pressure in emitter_pressures
+    )
+
+    total_flow_lph = number_of_emitters * emitter_flow_lph
+    pump_requirement = calculate_sector_pump_requirement(
+        sector_analysis={
+            "total_flow_lph": total_flow_lph,
+            "inlet_pressure_bar": required_inlet_pressure_bar,
+        },
+        static_elevation_difference_m=2.0,
+        upstream_friction_losses_m=0.6,
+        upstream_local_losses_m=0.15,
+    )
+
+    expected_head_m = (
+        2.0
+        + required_inlet_pressure_bar * 10.197162129779
+        + 0.6
+        + 0.15
+    )
+    assert pump_requirement["total_dynamic_head_m"] == pytest.approx(
+        expected_head_m
+    )
+    assert pump_requirement["sector_total_flow_lph"] == pytest.approx(
+        total_flow_lph
     )
