@@ -699,3 +699,97 @@ def test_non_compensating_solver_supports_public_package_export():
     from irrigation.calculations import analyze_non_compensating_dripline
 
     assert callable(analyze_non_compensating_dripline)
+
+
+def test_emitter_flow_distribution_uses_ceiling_for_low_quarter_count():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_emitter_flow_distribution,
+    )
+
+    result = analyze_emitter_flow_distribution([1, 2, 3, 4, 5])
+
+    assert result["low_quarter_emitters"] == 2
+    assert result["low_quarter_mean_flow_lph"] == pytest.approx(1.5)
+    assert result["mean_flow_lph"] == pytest.approx(3.0)
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(50.0)
+    assert result["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(20.0)
+
+
+def test_emitter_flow_distribution_is_independent_of_input_order():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_emitter_flow_distribution,
+    )
+
+    forward = analyze_emitter_flow_distribution([1, 2, 3, 4, 5, 6, 7])
+    reverse = analyze_emitter_flow_distribution([7, 6, 5, 4, 3, 2, 1])
+
+    assert forward["low_quarter_emitters"] == reverse["low_quarter_emitters"]
+    assert forward["low_quarter_mean_flow_lph"] == pytest.approx(
+        reverse["low_quarter_mean_flow_lph"]
+    )
+    assert forward["mean_flow_lph"] == pytest.approx(reverse["mean_flow_lph"])
+    assert forward["low_quarter_distribution_uniformity_percentage"] == pytest.approx(
+        reverse["low_quarter_distribution_uniformity_percentage"]
+    )
+    assert forward["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(
+        reverse["minimum_to_maximum_flow_ratio_percentage"]
+    )
+
+
+def test_emitter_flow_distribution_percentages_are_scale_invariant():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_emitter_flow_distribution,
+    )
+
+    baseline = analyze_emitter_flow_distribution([1, 2, 3, 4, 5, 6, 7, 8])
+    scaled = analyze_emitter_flow_distribution([10, 20, 30, 40, 50, 60, 70, 80])
+
+    assert scaled["low_quarter_distribution_uniformity_percentage"] == pytest.approx(
+        baseline["low_quarter_distribution_uniformity_percentage"]
+    )
+    assert scaled["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(
+        baseline["minimum_to_maximum_flow_ratio_percentage"]
+    )
+    assert scaled["mean_flow_lph"] == pytest.approx(
+        baseline["mean_flow_lph"] * 10
+    )
+    assert scaled["low_quarter_mean_flow_lph"] == pytest.approx(
+        baseline["low_quarter_mean_flow_lph"] * 10
+    )
+
+
+def test_emitter_flow_distribution_handles_single_emitter():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_emitter_flow_distribution,
+    )
+
+    result = analyze_emitter_flow_distribution([3.5])
+
+    assert result["total_emitters"] == 1
+    assert result["low_quarter_emitters"] == 1
+    assert result["mean_flow_lph"] == pytest.approx(3.5)
+    assert result["low_quarter_mean_flow_lph"] == pytest.approx(3.5)
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(100.0)
+    assert result["minimum_to_maximum_flow_ratio_percentage"] == pytest.approx(100.0)
+
+
+@pytest.mark.parametrize(
+    "flows",
+    [
+        [],
+        [0.0],
+        [-1.0],
+        [1.0, float("nan")],
+        [1.0, float("inf")],
+        [True],
+        [1.0, "2.0"],
+    ],
+)
+def test_emitter_flow_distribution_rejects_invalid_flows(flows):
+    from irrigation.calculations.emitter_pressure import (
+        analyze_emitter_flow_distribution,
+    )
+
+    with pytest.raises(ValueError):
+        analyze_emitter_flow_distribution(flows)
+
