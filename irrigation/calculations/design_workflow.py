@@ -159,3 +159,80 @@ def design_drip_irrigation_system(
             "Filter, valve, suction, and transient-pressure losses must be included when material. Static elevations within the sector belong in the sector elevation profiles, while source-to-sector elevation belongs in the upstream system parameters.",
         ],
     }
+
+def design_irrigation_sectors(
+    sectors,
+    upstream_system_parameters,
+    pump_data,
+    pressure_range,
+    pump_efficiency_percent=None,
+    motor_efficiency_percent=None,
+    flow_match_tolerance_percent=5.0,
+):
+    """
+    Analyze multiple irrigation sectors as independent sequential operations.
+
+    Each item in sectors is a dictionary with a unique non-empty "name"
+    and a "sector_parameters" dictionary accepted by
+    analyze_irrigation_sector. Shared upstream and pump data are evaluated
+    separately for every sector. This function does not model simultaneous
+    sector operation or shared-header flow between active sectors.
+    """
+    if not isinstance(sectors, (list, tuple)) or not sectors:
+        raise ValueError("Sectors must be a non-empty list or tuple.")
+
+    names = set()
+    results = []
+    for index, item in enumerate(sectors, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"Sector {index} must be a dictionary.")
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"Sector {index} must have a non-empty name.")
+        if name in names:
+            raise ValueError(f"Duplicate sector name: {name}.")
+        names.add(name)
+        parameters = item.get("sector_parameters")
+        if not isinstance(parameters, dict):
+            raise ValueError(
+                f"Sector '{name}' must include a sector_parameters dictionary."
+            )
+
+        analysis = design_drip_irrigation_system(
+            sector_parameters=parameters,
+            upstream_system_parameters=upstream_system_parameters,
+            pump_data=pump_data,
+            pressure_range=pressure_range,
+            pump_efficiency_percent=pump_efficiency_percent,
+            motor_efficiency_percent=motor_efficiency_percent,
+            flow_match_tolerance_percent=flow_match_tolerance_percent,
+        )
+        results.append({
+            "name": name,
+            "analysis": analysis,
+        })
+
+    return {
+        "operation_mode": "sequential_independent_sector_analysis",
+        "sector_count": len(results),
+        "sectors": results,
+        "summary": {
+            "sectors_meeting_flow_match": sum(
+                item["analysis"]["design_duty"][
+                    "operating_flow_matches_sector_design"
+                ]
+                for item in results
+            ),
+            "sectors_with_all_emitters_in_pressure_range": sum(
+                item["analysis"]["design_duty"][
+                    "all_emitters_within_pressure_range"
+                ]
+                for item in results
+            ),
+            "maximum_sector_design_flow_lph": max(
+                item["analysis"]["design_duty"]["sector_design_flow_lph"]
+                for item in results
+            ),
+        },
+    }
+
