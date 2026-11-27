@@ -214,3 +214,36 @@ def test_lower_efficiencies_increase_required_input_power():
         less_efficient["electrical_input_power_w"]
         > efficient["electrical_input_power_w"]
     )
+
+
+@pytest.mark.parametrize(
+    "parameter, baseline, increased",
+    [
+        ("water_density_kg_m3", 1000.0, 2000.0),
+        ("gravity_m_s2", 9.80665, 19.6133),
+    ],
+)
+def test_hydraulic_power_scales_linearly_with_physical_constants(
+    parameter, baseline, increased
+):
+    baseline_result = calculate_pump_power(0.001, 12, 70, **{parameter: baseline})
+    increased_result = calculate_pump_power(0.001, 12, 70, **{parameter: increased})
+
+    assert increased_result["hydraulic_power_w"] == pytest.approx(
+        2.0 * baseline_result["hydraulic_power_w"]
+    )
+
+
+def test_doubling_density_and_gravity_quadruples_hydraulic_power():
+    baseline = calculate_pump_power(0.001, 12, 70)
+    adjusted = calculate_pump_power(
+        0.001,
+        12,
+        70,
+        water_density_kg_m3=2000.0,
+        gravity_m_s2=2.0 * 9.80665,
+    )
+
+    assert adjusted["hydraulic_power_w"] == pytest.approx(
+        4.0 * baseline["hydraulic_power_w"]
+    )
