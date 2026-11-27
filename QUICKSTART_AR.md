@@ -103,6 +103,28 @@ for sector in result["sectors"]:
 
 يعيد هذا المسار نتيجة مستقلة لكل قطاع باستخدام بيانات المضخة والأنبوب الرئيسي المشتركة. يفترض التشغيل بالتتابع، ولا يحسب تشغيل عدة قطاعات في الوقت نفسه أو التدفق المشترك في رأس توزيع واحد.
 
+## حساب ET₀ اليومي من بيانات الطقس
+
+```python
+from irrigation.calculations import calculate_fao56_et0
+
+weather = calculate_fao56_et0(
+    tmin_c=18.0,
+    tmax_c=31.0,
+    wind_speed_2m_m_s=2.0,
+    solar_radiation_mj_m2_day=20.0,
+    elevation_m=10.0,
+    latitude_degrees=33.78,
+    day_of_year=180,
+    relative_humidity_min_percent=35.0,
+    relative_humidity_max_percent=85.0,
+)
+
+et0 = weather["et0_mm_day"]
+```
+
+تحسب الدالة ET₀ اليومية بمعادلة FAO-56 Penman-Monteith. أدخل قياسات اليوم للموقع. سرعة الرياح يجب أن تكون على ارتفاع مترين. أدخل ضغط البخار الفعلي مباشرة بدلاً من الرطوبة النسبية، أو أدخل الرطوبة الدنيا والعليا معاً. خط العرض موجب شمالاً وسالب جنوباً. رقم اليوم من 1 إلى 366. يفترض الحساب أن تدفق حرارة التربة اليومي يساوي صفراً.
+
 ## حساب الاحتياجات المائية للمحاصيل
 
 ```python
