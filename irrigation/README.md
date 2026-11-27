@@ -16,6 +16,7 @@ The irrigation package provides engineering calculations and an integrated workf
 - Pump curve validation and operating-point calculation.
 - System curve, total dynamic head, pump power, and sector-pump compatibility.
 - Integrated sector-to-pump design workflow, with sequential analysis of multiple independent irrigation sectors.
+- Daily crop-water requirement calculation from user-supplied ET₀, crop coefficient (Kc), planted area, and application efficiency.
 - Daily sequential irrigation scheduling from user-supplied water volumes, with runtime and available-hours checks.
 - JSON command-line interface.
 
@@ -28,6 +29,8 @@ python -m irrigation design examples/drip_irrigation_design.json --output report
 ```
 
 See [QUICKSTART_AR.md](../QUICKSTART_AR.md) for input structure, units, examples, and model limitations.
+
+Daily crop-water volumes can be estimated with `calculate_crop_water_requirements`. Supply ET₀ in mm/day, a crop name, Kc for its current growth stage, planted area in m², and application efficiency as a percentage. The result reports net crop water use and gross irrigation volume in litres/day and m³/day. Pass each sector gross daily volume to `schedule_irrigation_sectors`. ET₀ is not fetched or calculated by this function.
 
 Daily operation times can be calculated with `schedule_irrigation_sectors`, using the multi-sector design result, a daily water volume for each sector in litres, and available pump runtime in hours per day. The function reports each sector runtime and whether the total fits the daily time window. Water demand must be supplied by the user. Crop evapotranspiration and application efficiency are not estimated.
 
