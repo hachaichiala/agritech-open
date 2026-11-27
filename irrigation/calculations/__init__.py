@@ -119,6 +119,10 @@ from .pipe_diameter_payback import (
     analyze_pipe_diameter_payback,
 )
 
+from .eto import (
+    calculate_fao56_et0,
+)
+
 from .crop_water import (
     calculate_crop_water_requirements,
 )
