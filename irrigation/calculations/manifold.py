@@ -164,7 +164,8 @@ def calculate_pressure_at_each_lateral_takeoff(
     Calculate pressure at each lateral takeoff, in bar.
 
     Each returned pressure includes cumulative manifold friction losses
-    from the manifold inlet to that lateral takeoff.
+    and the takeoff elevation relative to the manifold inlet. Positive
+    elevations are uphill and reduce pressure.
     """
     _validate_positive_finite(inlet_pressure_bar, "Manifold inlet pressure")
 
@@ -176,18 +177,44 @@ def calculate_pressure_at_each_lateral_takeoff(
         hazen_williams_c=hazen_williams_c,
     )
 
+    if takeoff_elevations_m is None:
+        takeoff_elevations_m = [0.0] * number_of_laterals
+    if (
+        not isinstance(takeoff_elevations_m, (list, tuple))
+        or len(takeoff_elevations_m) != number_of_laterals
+    ):
+        raise ValueError(
+            "Lateral takeoff elevations must contain one value per lateral."
+        )
+    for elevation in takeoff_elevations_m:
+        if (
+            not isinstance(elevation, (int, float))
+            or isinstance(elevation, bool)
+            or not math.isfinite(elevation)
+        ):
+            raise ValueError(
+                "Lateral takeoff elevations must be finite numbers."
+            )
+
     pressures_bar = []
     cumulative_loss_m = 0.0
 
-    for segment_loss_m in segment_losses_m:
+    for segment_loss_m, elevation_m in zip(
+        segment_losses_m, takeoff_elevations_m
+    ):
         cumulative_loss_m += segment_loss_m
-        pressure_loss_bar = meters_of_water_to_bar(cumulative_loss_m)
-        takeoff_pressure_bar = inlet_pressure_bar - pressure_loss_bar
+        pressure_head_m = (
+            inlet_pressure_bar / 0.0980665
+            - cumulative_loss_m
+            - elevation_m
+        )
+        takeoff_pressure_bar = pressure_head_m * 0.0980665
 
         if not math.isfinite(takeoff_pressure_bar) or takeoff_pressure_bar <= 0:
             raise ValueError(
                 "Manifold pressure reaches zero or below at a lateral takeoff. "
-                "Increase inlet pressure or reduce manifold friction losses."
+                "Increase inlet pressure, reduce manifold friction losses, "
+                "or review the elevation profile."
             )
 
         pressures_bar.append(takeoff_pressure_bar)
