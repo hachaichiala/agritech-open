@@ -118,3 +118,7 @@ from .pipe_lifecycle_cost import (
 from .pipe_diameter_payback import (
     analyze_pipe_diameter_payback,
 )
+
+from .design_workflow import (
+    design_drip_irrigation_system,
+)
