@@ -15,7 +15,7 @@ The irrigation package provides engineering calculations and an integrated workf
 - Pipe lifecycle cost, economic sensitivity, and payback analysis.
 - Pump curve validation and operating-point calculation.
 - System curve, total dynamic head, pump power, and sector-pump compatibility.
-- Integrated sector-to-pump design workflow.
+- Integrated sector-to-pump design workflow, with sequential analysis of multiple independent irrigation sectors.
 - JSON command-line interface.
 
 ## Run a design
@@ -27,6 +27,8 @@ python -m irrigation design examples/drip_irrigation_design.json --output report
 ```
 
 See [QUICKSTART_AR.md](../QUICKSTART_AR.md) for input structure, units, examples, and model limitations.
+
+Multiple sectors can be analyzed through `design_irrigation_sectors`. Each sector receives an independent pump/system analysis using the shared upstream and pump data. Simultaneous operation of several sectors and shared-header hydraulics are not modeled by this function.
 
 ## Engineering limitations
 
