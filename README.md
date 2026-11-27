@@ -219,54 +219,49 @@ Active development of the irrigation calculation engine.
 
 ## Current Features
 
-- Total irrigation flow calculation.
-- Emitter quantity and tree-zone flow calculation.
-- Hazen-Williams pressure loss calculation.
-- Hydraulic unit conversions.
-- Initial dripline friction loss estimation.
+- Flow and emitter discharge calculations.
+- Hazen-Williams pipe and dripline head losses.
+- Emitter pressure analysis for compensating and non-compensating emitters.
+- Manifold and irrigation-sector hydraulic analysis.
+- Pipe sizing, velocity, pressure rating, and economic comparisons.
+- Pump curves, operating point, system curve, HMT, and power.
+- Integrated sector-to-pump workflow.
+- JSON command-line interface.
 
 ## Hydraulic Methodology
 
-See [HYDRAULIC_METHODS.md](HYDRAULIC_METHODS.md) for the equations, assumptions, reference sources, and current model limitations.
+See [HYDRAULIC_METHODS.md](HYDRAULIC_METHODS.md) for equations, assumptions, reference sources, and model limitations.
 
 ## Quick Start
 
-Use the integrated sector-to-pump workflow with the [Arabic quick-start guide](QUICKSTART_AR.md). The public function `design_drip_irrigation_system` combines sector pressure analysis, system-curve construction, pump operating-point analysis, and power estimation using the existing calculation modules.
+Install the package and development tools:
 
-The same workflow is available from the command line with `python -m irrigation design examples/drip_irrigation_design.json --output report.json`. The example input uses illustrative values only.
+```bash
+python -m pip install -e ".[dev]"
+```
+
+Run the example design:
+
+```bash
+agritech-irrigation examples/drip_irrigation_design.json --output report.json
+```
+
+The example uses illustrative values only. Replace pump curves, emitter pressure limits, pipe dimensions, and site data with verified project information.
+
+See [QUICKSTART_AR.md](QUICKSTART_AR.md) for the complete Arabic guide.
 
 ## Testing
 
-The project uses pytest for automated testing.
-
-Run the full irrigation test suite locally with:
+Run the suite:
 
 ```bash
 python -m pytest irrigation/tests -v
 ```
 
-GitHub Actions runs this test suite automatically on pushes to `main`
-and on pull requests targeting `main`.
+GitHub Actions installs the package and runs the test suite on pushes to `main` and pull requests targeting `main`.
 
 ## Development Status
 
-### Pressure-Compensating Emitters
-
-The irrigation engine includes preliminary pressure
-validation for pressure-compensating (PC) emitters.
-
-Features:
-- Configurable emitter operating pressure range.
-- Inlet and outlet pressure calculations.
-- Dripline friction loss integration.
-- Automatic pressure compensation range checks.
-
-The default pressure range (1 to 4 bar) is temporary
-and must be replaced with manufacturer specifications.
-
+The irrigation calculation package and command-line workflow are implemented for the documented scope. Further engineering validation and additional network configurations remain under active development. Review model assumptions and manufacturer data before field deployment.
 
 Version: 0.1.0
-
-The irrigation calculation engine is under active development.
-All hydraulic models require further validation before field deployment.
-
