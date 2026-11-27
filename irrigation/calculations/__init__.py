@@ -122,4 +122,5 @@ from .pipe_diameter_payback import (
 from .design_workflow import (
     design_drip_irrigation_system,
     design_irrigation_sectors,
+    schedule_irrigation_sectors,
 )
