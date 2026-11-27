@@ -236,3 +236,105 @@ def design_irrigation_sectors(
         },
     }
 
+def schedule_irrigation_sectors(
+    sector_design,
+    daily_water_requirements_l,
+    available_runtime_hours_per_day,
+):
+    """
+    Convert daily sector water volumes into sequential operating times.
+
+    The sector_design argument must be the result of
+    design_irrigation_sectors. Daily water requirements are supplied
+    explicitly in litres per sector. This function does not estimate crop
+    water demand or account for irrigation efficiency.
+    """
+    if not isinstance(sector_design, dict):
+        raise ValueError("Sector design must be a dictionary.")
+    sectors = sector_design.get("sectors")
+    if not isinstance(sectors, list) or not sectors:
+        raise ValueError("Sector design must contain a non-empty sectors list.")
+    if not isinstance(daily_water_requirements_l, dict):
+        raise ValueError("Daily water requirements must be a dictionary.")
+
+    if (
+        not isinstance(available_runtime_hours_per_day, (int, float))
+        or isinstance(available_runtime_hours_per_day, bool)
+        or not math.isfinite(available_runtime_hours_per_day)
+        or available_runtime_hours_per_day <= 0
+    ):
+        raise ValueError("Available daily runtime must be positive and finite.")
+
+    sector_names = [item.get("name") for item in sectors if isinstance(item, dict)]
+    if len(sector_names) != len(sectors) or any(
+        not isinstance(name, str) or not name.strip() for name in sector_names
+    ):
+        raise ValueError("Every designed sector must have a non-empty name.")
+    if len(set(sector_names)) != len(sector_names):
+        raise ValueError("Designed sector names must be unique.")
+    if set(daily_water_requirements_l) != set(sector_names):
+        raise ValueError(
+            "Daily water requirements must match the designed sector names exactly."
+        )
+
+    schedule = []
+    total_volume_l = 0.0
+    total_runtime_hours = 0.0
+    for item in sectors:
+        name = item["name"]
+        requirement = daily_water_requirements_l[name]
+        if (
+            not isinstance(requirement, (int, float))
+            or isinstance(requirement, bool)
+            or not math.isfinite(requirement)
+            or requirement < 0
+        ):
+            raise ValueError(
+                f"Daily water requirement for sector '{name}' must be finite and non-negative."
+            )
+
+        try:
+            flow_lph = float(
+                item["analysis"]["design_duty"]["sector_design_flow_lph"]
+            )
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ValueError(
+                f"Sector '{name}' is missing a valid design flow."
+            ) from None
+        if not math.isfinite(flow_lph) or flow_lph <= 0:
+            raise ValueError(
+                f"Sector '{name}' design flow must be positive and finite."
+            )
+
+        volume_l = float(requirement)
+        runtime_hours = volume_l / flow_lph
+        total_volume_l += volume_l
+        total_runtime_hours += runtime_hours
+        schedule.append({
+            "name": name,
+            "daily_water_requirement_l": volume_l,
+            "design_flow_lph": flow_lph,
+            "runtime_hours": runtime_hours,
+            "runtime_minutes": runtime_hours * 60.0,
+        })
+
+    available_hours = float(available_runtime_hours_per_day)
+    return {
+        "operation_mode": "sequential_daily_irrigation_schedule",
+        "sectors": schedule,
+        "summary": {
+            "total_daily_water_requirement_l": total_volume_l,
+            "total_runtime_hours": total_runtime_hours,
+            "total_runtime_minutes": total_runtime_hours * 60.0,
+            "available_runtime_hours_per_day": available_hours,
+            "remaining_runtime_hours": available_hours - total_runtime_hours,
+            "fits_available_runtime": total_runtime_hours <= available_hours,
+        },
+        "limitations": [
+            "Daily water requirements are user-supplied and are not estimated from crop or climate data.",
+            "Runtime is calculated from sector design flow and assumes the sector operates at that flow.",
+            "Sectors are scheduled sequentially. Simultaneous operation is not modeled.",
+            "Application efficiency, refill constraints, and soil-water storage are not included.",
+        ],
+    }
+
