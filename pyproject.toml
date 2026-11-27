@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agritech-open"
+version = "0.1.0"
+description = "Open-source hydraulic calculations for drip irrigation design"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "AgriTech Open contributors" }]
+keywords = ["agriculture", "irrigation", "hydraulics", "drip-irrigation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Agriculture",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+agritech-irrigation = "irrigation.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["irrigation*"]
+
+[tool.pytest.ini_options]
+testpaths = ["irrigation/tests"]
