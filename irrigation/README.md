@@ -16,7 +16,8 @@ The irrigation package provides engineering calculations and an integrated workf
 - Pump curve validation and operating-point calculation.
 - System curve, total dynamic head, pump power, and sector-pump compatibility.
 - Integrated sector-to-pump design workflow, with sequential analysis of multiple independent irrigation sectors.
-- Daily crop-water requirement calculation from user-supplied ET₀, crop coefficient (Kc), planted area, and application efficiency.
+- Daily FAO-56 Penman-Monteith reference evapotranspiration (ET₀) from weather observations.
+- Daily crop-water requirement calculation from ET₀, crop coefficient (Kc), planted area, and application efficiency.
 - Daily sequential irrigation scheduling from user-supplied water volumes, with runtime and available-hours checks.
 - JSON command-line interface.
 
@@ -29,6 +30,8 @@ python -m irrigation design examples/drip_irrigation_design.json --output report
 ```
 
 See [QUICKSTART_AR.md](../QUICKSTART_AR.md) for input structure, units, examples, and model limitations.
+
+Daily reference evapotranspiration can be calculated with `calculate_fao56_et0` from daily minimum and maximum temperature, wind speed at 2 m, solar radiation, elevation, latitude, day of year, and either actual vapour pressure or minimum and maximum relative humidity. The function implements the daily FAO-56 Penman-Monteith method and assumes daily soil heat flux is zero.
 
 Daily crop-water volumes can be estimated with `calculate_crop_water_requirements`. Supply ET₀ in mm/day, a crop name, Kc for its current growth stage, planted area in m², and application efficiency as a percentage. The result reports net crop water use and gross irrigation volume in litres/day and m³/day. Pass each sector gross daily volume to `schedule_irrigation_sectors`. ET₀ is not fetched or calculated by this function.
 
