@@ -188,3 +188,46 @@ def test_integrated_analysis_omits_electrical_input_without_motor_efficiency():
     assert power["motor_efficiency_percent"] is None
     assert power["electrical_input_power_w"] is None
 
+
+@pytest.mark.parametrize(
+    "motor_efficiency",
+    [0.0, 100.0001, float("nan"), True],
+)
+def test_integrated_analysis_rejects_invalid_motor_efficiency(
+    motor_efficiency,
+):
+    with pytest.raises(ValueError, match="Motor efficiency"):
+        analyze_pump_system(
+            PUMP_DATA,
+            SYSTEM_PARAMETERS,
+            motor_efficiency_percent=motor_efficiency,
+        )
+
+
+def test_integrated_analysis_accepts_one_hundred_percent_motor_efficiency():
+    result = analyze_pump_system(
+        PUMP_DATA,
+        SYSTEM_PARAMETERS,
+        motor_efficiency_percent=100.0,
+    )
+
+    power = result["pump_analysis"]["power"]
+
+    assert power["motor_efficiency_percent"] == pytest.approx(100.0)
+    assert power["electrical_input_power_w"] == pytest.approx(
+        power["shaft_power_w"]
+    )
+
+
+def test_integrated_analysis_doubles_electrical_input_at_fifty_percent_motor_efficiency():
+    result = analyze_pump_system(
+        PUMP_DATA,
+        SYSTEM_PARAMETERS,
+        motor_efficiency_percent=50.0,
+    )
+
+    power = result["pump_analysis"]["power"]
+
+    assert power["electrical_input_power_w"] == pytest.approx(
+        2.0 * power["shaft_power_w"]
+    )
