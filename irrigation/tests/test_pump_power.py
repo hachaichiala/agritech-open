@@ -129,3 +129,56 @@ def test_accepts_full_efficiency_boundaries():
         result["hydraulic_power_w"]
     )
 
+
+def test_scales_hydraulic_power_linearly_with_flow():
+    low_flow = calculate_pump_power(0.0005, 20, 50)
+    high_flow = calculate_pump_power(0.001, 20, 50)
+
+    assert high_flow["hydraulic_power_w"] == pytest.approx(
+        2.0 * low_flow["hydraulic_power_w"]
+    )
+
+
+def test_scales_hydraulic_power_linearly_with_head():
+    low_head = calculate_pump_power(0.001, 10, 50)
+    high_head = calculate_pump_power(0.001, 20, 50)
+
+    assert high_head["hydraulic_power_w"] == pytest.approx(
+        2.0 * low_head["hydraulic_power_w"]
+    )
+
+
+def test_preserves_power_relationship_at_low_valid_flow_and_head():
+    result = calculate_pump_power(
+        flow_m3_s=1e-9,
+        head_m=1e-6,
+        pump_efficiency_percent=25.0,
+        motor_efficiency_percent=50.0,
+    )
+
+    assert result["hydraulic_power_w"] > 0.0
+    assert result["shaft_power_w"] == pytest.approx(
+        result["hydraulic_power_w"] / 0.25
+    )
+    assert result["electrical_input_power_w"] == pytest.approx(
+        result["shaft_power_w"] / 0.5
+    )
+
+
+def test_preserves_power_relationship_for_large_finite_inputs():
+    result = calculate_pump_power(
+        flow_m3_s=1e100,
+        head_m=1e100,
+        pump_efficiency_percent=80.0,
+        motor_efficiency_percent=90.0,
+    )
+
+    assert math.isfinite(result["hydraulic_power_w"])
+    assert math.isfinite(result["shaft_power_w"])
+    assert math.isfinite(result["electrical_input_power_w"])
+    assert result["shaft_power_w"] == pytest.approx(
+        result["hydraulic_power_w"] / 0.8
+    )
+    assert result["electrical_input_power_w"] == pytest.approx(
+        result["shaft_power_w"] / 0.9
+    )
