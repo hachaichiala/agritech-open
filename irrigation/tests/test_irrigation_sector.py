@@ -163,3 +163,24 @@ def test_sector_rejects_invalid_hydraulic_inputs(overrides):
 def test_sector_rejects_pressure_below_zero_at_lateral_or_emitter():
     with pytest.raises(ValueError, match="pressure reaches zero or below"):
         _reference_sector(inlet_pressure_bar=1e-12)
+
+
+def test_sector_integrates_manifold_and_lateral_elevation_profiles():
+    flat = _reference_sector()
+    sloped = _reference_sector(
+        lateral_takeoff_elevations_m=[0.0, 0.5, 1.0, 1.5],
+        emitter_elevations_m=[0.0, 0.25, 0.5],
+    )
+
+    assert sloped["manifold_head_loss_m"] == pytest.approx(
+        flat["manifold_head_loss_m"]
+    )
+    assert sloped["lateral_inlet_pressures_bar"][0] == pytest.approx(
+        flat["lateral_inlet_pressures_bar"][0]
+    )
+    assert sloped["lateral_inlet_pressures_bar"][-1] < (
+        flat["lateral_inlet_pressures_bar"][-1]
+    )
+    assert sloped["laterals"][-1]["outlet_pressure_bar"] < (
+        flat["laterals"][-1]["outlet_pressure_bar"]
+    )
