@@ -2,7 +2,7 @@
 
 ## الهدف
 
-توفّر الدالة `design_drip_irrigation_system` مساراً موحداً لتحليل قطاع ري بالتنقيط، وبناء منحنى النظام، ثم تحديد نقطة تقاطع منحنى المضخة مع منحنى النظام وحساب القدرة.
+توفّر الدالة `design_drip_irrigation_system` مساراً موحداً لتحليل قطاع ري بالتنقيط، وبناء منحنى النظام، ثم تحديد نقطة تقاطع منحنى المضخة مع منحنى النظام وحساب القدرة. وتوفّر `design_irrigation_sectors` تحليلاً مستقلاً لعدة قطاعات تعمل بالتتابع.
 
 الدالة تنسّق الحسابات الموجودة. لا تضيف معادلات هيدروليكية جديدة.
 
@@ -80,6 +80,28 @@ print(result["pump_system_analysis"]["pump_analysis"])
 ```
 
 القيم أعلاه للتوضيح البرمجي فقط. لا تمثل توصية لاختيار مضخة أو أنبوب.
+
+## تحليل عدة قطاعات بالتتابع
+
+```python
+from irrigation.calculations import design_irrigation_sectors
+
+result = design_irrigation_sectors(
+    sectors=[
+        {"name": "قطاع الأشجار", "sector_parameters": tree_sector_parameters},
+        {"name": "قطاع الخضروات", "sector_parameters": vegetable_sector_parameters},
+    ],
+    upstream_system_parameters=upstream_parameters,
+    pump_data=pump_data,
+    pressure_range=pressure_range,
+    motor_efficiency_percent=80.0,
+)
+
+for sector in result["sectors"]:
+    print(sector["name"], sector["analysis"]["design_duty"])
+```
+
+يعيد هذا المسار نتيجة مستقلة لكل قطاع باستخدام بيانات المضخة والأنبوب الرئيسي المشتركة. يفترض التشغيل بالتتابع، ولا يحسب تشغيل عدة قطاعات في الوقت نفسه أو التدفق المشترك في رأس توزيع واحد.
 
 ## الوحدات
 
