@@ -10,7 +10,7 @@ The irrigation package provides engineering calculations and an integrated workf
 - Hazen-Williams pipe and dripline head-loss calculations.
 - Emitter pressure analysis, including pressure-compensating and non-compensating emitters.
 - Manifold flow, segment losses, and lateral take-off pressure.
-- Irrigation sector hydraulic analysis.
+- Irrigation sector hydraulic analysis, including optional manifold takeoff and lateral emitter elevation profiles.
 - Pipe internal diameter, velocity, pressure rating, and diameter comparison.
 - Pipe lifecycle cost, economic sensitivity, and payback analysis.
 - Pump curve validation and operating-point calculation.
