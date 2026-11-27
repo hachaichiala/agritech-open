@@ -214,3 +214,24 @@ def test_minor_head_loss_follows_inverse_fourth_diameter_power():
     larger = calculate_minor_head_loss(0.001, 0.06, 2.0)
     assert larger == pytest.approx(smaller * (0.06 / 0.05) ** -4)
 
+
+@pytest.mark.parametrize(
+    "base_coefficient, new_coefficient",
+    [
+        (100.0, 200.0),
+        (120.0, 180.0),
+        (150.0, 300.0),
+    ],
+)
+def test_hazen_williams_loss_follows_inverse_coefficient_exponent(
+    base_coefficient, new_coefficient
+):
+    base = calculate_hazen_williams_head_loss(
+        100, 0.001, 0.05, base_coefficient
+    )
+    changed = calculate_hazen_williams_head_loss(
+        100, 0.001, 0.05, new_coefficient
+    )
+    expected_ratio = (new_coefficient / base_coefficient) ** -1.852
+    assert changed == pytest.approx(base * expected_ratio)
+
