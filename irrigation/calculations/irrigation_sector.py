@@ -3,12 +3,13 @@ Integrated hydraulic analysis for a sector of parallel drip laterals.
 
 Model assumptions:
 - Laterals have equal lengths, emitter counts, and emitter flow rates.
-- Laterals are equally spaced along a straight, horizontal manifold.
-- The manifold and laterals are horizontal.
+- Laterals are equally spaced along a straight manifold.
 - Each manifold segment ends at one lateral takeoff.
+- Optional takeoff and emitter elevation profiles account for static
+  elevation changes relative to the manifold inlet and each lateral inlet.
 - Hazen-Williams friction losses are included.
-- Local losses, elevation differences, valves, filters, and fittings are
-  excluded and must be assessed separately in a full system design.
+- Local losses, valves, filters, and fittings are excluded and must be
+  assessed separately in a full system design.
 """
 
 from .emitter_pressure import (
