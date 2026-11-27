@@ -229,6 +229,10 @@ Active development of the irrigation calculation engine.
 
 See [HYDRAULIC_METHODS.md](HYDRAULIC_METHODS.md) for the equations, assumptions, reference sources, and current model limitations.
 
+## Quick Start
+
+Use the integrated sector-to-pump workflow with the [Arabic quick-start guide](QUICKSTART_AR.md). The public function `design_drip_irrigation_system` combines sector pressure analysis, system-curve construction, pump operating-point analysis, and power estimation using the existing calculation modules.
+
 ## Testing
 
 The project uses pytest for automated testing.
