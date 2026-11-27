@@ -182,3 +182,35 @@ def test_preserves_power_relationship_for_large_finite_inputs():
     assert result["electrical_input_power_w"] == pytest.approx(
         result["shaft_power_w"] / 0.9
     )
+
+
+def test_shaft_power_is_not_less_than_hydraulic_power():
+    result = calculate_pump_power(0.001, 15, 65)
+
+    assert result["shaft_power_w"] >= result["hydraulic_power_w"]
+
+
+def test_electrical_input_is_not_less_than_shaft_power():
+    result = calculate_pump_power(
+        0.001,
+        15,
+        pump_efficiency_percent=65,
+        motor_efficiency_percent=88,
+    )
+
+    assert result["electrical_input_power_w"] >= result["shaft_power_w"]
+
+
+def test_lower_efficiencies_increase_required_input_power():
+    efficient = calculate_pump_power(
+        0.001, 15, 80, motor_efficiency_percent=90
+    )
+    less_efficient = calculate_pump_power(
+        0.001, 15, 40, motor_efficiency_percent=70
+    )
+
+    assert less_efficient["shaft_power_w"] > efficient["shaft_power_w"]
+    assert (
+        less_efficient["electrical_input_power_w"]
+        > efficient["electrical_input_power_w"]
+    )
