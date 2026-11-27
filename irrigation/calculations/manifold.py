@@ -159,6 +159,7 @@ def calculate_pressure_at_each_lateral_takeoff(
     lateral_flow_lph: float,
     diameter_m: float,
     hazen_williams_c: float = 150,
+    takeoff_elevations_m: list | None = None,
 ) -> list:
     """
     Calculate pressure at each lateral takeoff, in bar.
@@ -208,7 +209,7 @@ def calculate_pressure_at_each_lateral_takeoff(
             - cumulative_loss_m
             - elevation_m
         )
-        takeoff_pressure_bar = pressure_head_m * 0.0980665
+        takeoff_pressure_bar = meters_of_water_to_bar(pressure_head_m)
 
         if not math.isfinite(takeoff_pressure_bar) or takeoff_pressure_bar <= 0:
             raise ValueError(
