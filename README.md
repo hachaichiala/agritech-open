@@ -233,6 +233,8 @@ See [HYDRAULIC_METHODS.md](HYDRAULIC_METHODS.md) for the equations, assumptions,
 
 Use the integrated sector-to-pump workflow with the [Arabic quick-start guide](QUICKSTART_AR.md). The public function `design_drip_irrigation_system` combines sector pressure analysis, system-curve construction, pump operating-point analysis, and power estimation using the existing calculation modules.
 
+The same workflow is available from the command line with `python -m irrigation design examples/drip_irrigation_design.json --output report.json`. The example input uses illustrative values only.
+
 ## Testing
 
 The project uses pytest for automated testing.
