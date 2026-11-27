@@ -171,3 +171,22 @@ def test_minor_head_loss_rejects_non_finite_inputs(
             flow, diameter, coefficient, gravity
         )
 
+
+def test_hazen_williams_loss_scales_linearly_with_pipe_length():
+    base = calculate_hazen_williams_head_loss(100, 0.001, 0.05, 150)
+    doubled = calculate_hazen_williams_head_loss(200, 0.001, 0.05, 150)
+    assert doubled == pytest.approx(2.0 * base)
+
+
+def test_hazen_williams_loss_follows_flow_exponent():
+    base = calculate_hazen_williams_head_loss(100, 0.001, 0.05, 150)
+    doubled_flow = calculate_hazen_williams_head_loss(100, 0.002, 0.05, 150)
+    assert doubled_flow == pytest.approx(base * (2.0 ** 1.852))
+
+
+def test_hazen_williams_loss_decreases_with_larger_diameter():
+    smaller = calculate_hazen_williams_head_loss(100, 0.001, 0.05, 150)
+    larger = calculate_hazen_williams_head_loss(100, 0.001, 0.06, 150)
+    assert larger < smaller
+    assert larger == pytest.approx(smaller * ((0.06 / 0.05) ** -4.871))
+
