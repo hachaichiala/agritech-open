@@ -34,12 +34,16 @@ def analyze_irrigation_sector(
     inlet_pressure_bar: float,
     pressure_range: EmitterPressureRange,
     hazen_williams_c: float = 150,
+    lateral_takeoff_elevations_m: list | None = None,
+    emitter_elevations_m: list | None = None,
 ) -> dict:
     """
     Analyze manifold pressure and every emitter in a parallel-lateral sector.
 
     Returns total sector flow, manifold head loss, pressure at each lateral
-    inlet, emitter pressures, and sector-wide pressure compliance.
+    inlet, emitter pressures, and sector-wide pressure compliance. Optional
+    elevation profiles are relative to the manifold inlet and each lateral
+    inlet respectively. Positive elevations are uphill.
     """
     if not isinstance(pressure_range, EmitterPressureRange):
         raise ValueError("Invalid emitter pressure range.")
@@ -69,6 +73,7 @@ def analyze_irrigation_sector(
         lateral_flow_lph=lateral_flow_lph,
         diameter_m=manifold_diameter_m,
         hazen_williams_c=hazen_williams_c,
+        takeoff_elevations_m=lateral_takeoff_elevations_m,
     )
 
     laterals = []
@@ -86,6 +91,7 @@ def analyze_irrigation_sector(
             diameter_m=lateral_diameter_m,
             pressure_range=pressure_range,
             hazen_williams_c=hazen_williams_c,
+            emitter_elevations_m=emitter_elevations_m,
         )
         all_emitter_pressures_bar.extend(
             lateral_result["emitter_pressures_bar"]
