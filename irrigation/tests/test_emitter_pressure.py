@@ -506,3 +506,196 @@ def test_analyze_dripline_pressure_rejects_invalid_elevation_profile():
             pressure_range=EmitterPressureRange(),
             emitter_elevations_m=[0.0, 1.0],
         )
+
+
+
+def _non_compensating_inputs(**overrides):
+    from irrigation.calculations.emitter_pressure import (
+        analyze_non_compensating_dripline,
+    )
+
+    parameters = {
+        "inlet_pressure_bar": 2.5,
+        "length_m": 100.0,
+        "number_of_emitters": 40,
+        "reference_flow_lph": 2.0,
+        "reference_pressure_bar": 1.0,
+        "discharge_exponent": 0.5,
+        "diameter_m": 0.012,
+        "hazen_williams_c": 150.0,
+    }
+    parameters.update(overrides)
+    return analyze_non_compensating_dripline(**parameters)
+
+
+def test_non_compensating_zero_exponent_preserves_constant_emitter_flow():
+    from irrigation.calculations.emitter_pressure import (
+        analyze_non_compensating_dripline,
+    )
+
+    result = analyze_non_compensating_dripline(
+        inlet_pressure_bar=2.0,
+        length_m=30.0,
+        number_of_emitters=12,
+        reference_flow_lph=2.0,
+        reference_pressure_bar=1.0,
+        discharge_exponent=0.0,
+        diameter_m=0.016,
+    )
+
+    assert result["converged"] is True
+    assert result["iterations"] == 1
+    assert result["emitter_flows_lph"] == pytest.approx([2.0] * 12)
+    assert result["total_flow_lph"] == pytest.approx(24.0)
+    assert result["low_quarter_distribution_uniformity_percentage"] == pytest.approx(100.0)
+
+
+def test_non_compensating_emitter_flow_decreases_with_pressure():
+    result = _non_compensating_inputs()
+
+    pressures = result["emitter_pressures_bar"]
+    flows = result["emitter_flows_lph"]
+
+    assert all(p > 0 for p in pressures)
+    assert all(pressures[i] > pressures[i + 1] for i in range(len(pressures) - 1))
+    assert all(flows[i] > flows[i + 1] for i in range(len(flows) - 1))
+    assert result["maximum_flow_lph"] == pytest.approx(flows[0])
+    assert result["minimum_flow_lph"] == pytest.approx(flows[-1])
+    assert result["minimum_to_maximum_flow_ratio_percentage"] < 100.0
+
+
+def test_non_compensating_segment_flows_satisfy_mass_balance():
+    result = _non_compensating_inputs()
+
+    expected_segment_flows = [
+        sum(result["emitter_flows_lph"][index:])
+        for index in range(len(result["emitter_flows_lph"]))
+    ]
+
+    assert result["segment_flows_lph"] == pytest.approx(expected_segment_flows)
+    assert result["total_flow_lph"] == pytest.approx(
+        sum(result["emitter_flows_lph"])
+    )
+    assert result["segment_flows_lph"][0] == pytest.approx(
+        result["total_flow_lph"]
+    )
+    assert result["segment_flows_lph"][-1] == pytest.approx(
+        result["emitter_flows_lph"][-1]
+    )
+
+
+def test_non_compensating_solver_reports_consistent_segment_losses():
+    result = _non_compensating_inputs()
+
+    assert len(result["segment_head_losses_m"]) == 40
+    assert all(loss > 0 for loss in result["segment_head_losses_m"])
+    assert result["head_loss_m"] == pytest.approx(
+        sum(result["segment_head_losses_m"])
+    )
+    assert result["converged"] is True
+    assert 1 <= result["iterations"] <= 500
+
+
+def test_non_compensating_uphill_elevation_reduces_downstream_emitter_flow():
+    flat = _non_compensating_inputs()
+    uphill = _non_compensating_inputs(
+        emitter_elevations_m=[
+            0.05 * index for index in range(40)
+        ]
+    )
+
+    assert uphill["emitter_pressures_bar"][-1] < flat["emitter_pressures_bar"][-1]
+    assert uphill["emitter_flows_lph"][-1] < flat["emitter_flows_lph"][-1]
+
+
+def test_non_compensating_connection_losses_reduce_outlet_pressure_and_flow():
+    baseline = _non_compensating_inputs()
+    with_connections = _non_compensating_inputs(emitter_connection_k=2.0)
+
+    assert with_connections["head_loss_m"] > baseline["head_loss_m"]
+    assert (
+        with_connections["emitter_pressures_bar"][-1]
+        < baseline["emitter_pressures_bar"][-1]
+    )
+    assert (
+        with_connections["emitter_flows_lph"][-1]
+        < baseline["emitter_flows_lph"][-1]
+    )
+
+
+@pytest.mark.parametrize(
+    "parameter,value",
+    [
+        ("inlet_pressure_bar", 0.0),
+        ("reference_flow_lph", -1.0),
+        ("reference_pressure_bar", 0.0),
+        ("discharge_exponent", -0.1),
+        ("length_m", 0.0),
+        ("diameter_m", 0.0),
+        ("hazen_williams_c", 0.0),
+        ("emitter_connection_k", -1.0),
+        ("tolerance", 0.0),
+        ("inlet_pressure_bar", float("inf")),
+        ("reference_flow_lph", float("nan")),
+        ("discharge_exponent", float("inf")),
+    ],
+)
+def test_non_compensating_solver_rejects_invalid_numeric_inputs(
+    parameter, value
+):
+    with pytest.raises(ValueError):
+        _non_compensating_inputs(**{parameter: value})
+
+
+@pytest.mark.parametrize("count", [0, -1, 2.5, True])
+def test_non_compensating_solver_rejects_invalid_emitter_counts(count):
+    with pytest.raises(ValueError, match="Number of emitters"):
+        _non_compensating_inputs(number_of_emitters=count)
+
+
+@pytest.mark.parametrize("iterations", [0, -1, 1.5, True])
+def test_non_compensating_solver_rejects_invalid_iteration_limits(iterations):
+    with pytest.raises(ValueError, match="Maximum iterations"):
+        _non_compensating_inputs(max_iterations=iterations)
+
+
+@pytest.mark.parametrize(
+    "elevations",
+    [
+        [0.0],
+        [0.0] * 39,
+        [0.0] * 39 + [float("nan")],
+        [0.0] * 39 + [float("inf")],
+        [0.0] * 39 + [True],
+    ],
+)
+def test_non_compensating_solver_rejects_invalid_elevation_profiles(elevations):
+    with pytest.raises(ValueError, match="Emitter elevations"):
+        _non_compensating_inputs(emitter_elevations_m=elevations)
+
+
+def test_non_compensating_solver_raises_when_iteration_limit_is_insufficient():
+    with pytest.raises(ValueError, match="did not converge"):
+        _non_compensating_inputs(
+            max_iterations=1,
+            tolerance=1e-14,
+        )
+
+
+def test_non_compensating_solver_rejects_pressure_collapse():
+    with pytest.raises(ValueError, match="Pressure reaches zero or below"):
+        _non_compensating_inputs(
+            inlet_pressure_bar=0.05,
+            length_m=500.0,
+            number_of_emitters=100,
+            reference_flow_lph=8.0,
+            reference_pressure_bar=1.0,
+            discharge_exponent=0.5,
+            diameter_m=0.004,
+        )
+
+
+def test_non_compensating_solver_supports_public_package_export():
+    from irrigation.calculations import analyze_non_compensating_dripline
+
+    assert callable(analyze_non_compensating_dripline)
