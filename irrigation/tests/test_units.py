@@ -42,3 +42,26 @@ def test_meters_of_water_to_bar():
 def test_invalid_inputs(function, value):
     with pytest.raises(ValueError):
         function(value)
+
+
+def test_flow_conversions_round_trip():
+    flow_lph = 7200.0
+
+    flow_m3_s = liters_per_hour_to_cubic_meters_per_second(flow_lph)
+    result_lph = cubic_meters_per_second_to_liters_per_hour(flow_m3_s)
+
+    assert result_lph == pytest.approx(flow_lph)
+
+
+def test_pressure_conversions_round_trip():
+    pressure_bar = 3.5
+
+    head_m = bar_to_meters_of_water(pressure_bar)
+    result_bar = meters_of_water_to_bar(head_m)
+
+    assert result_bar == pytest.approx(pressure_bar)
+
+
+def test_zero_flow_converts_to_zero_in_both_directions():
+    assert liters_per_hour_to_cubic_meters_per_second(0.0) == 0.0
+    assert cubic_meters_per_second_to_liters_per_hour(0.0) == 0.0
