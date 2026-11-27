@@ -105,3 +105,34 @@ def test_rejects_overflow_in_local_head_loss_calculation():
             upstream_pipe_diameter_m=1.0,
             local_loss_coefficient=1.0,
         )
+
+
+def test_local_head_loss_matches_velocity_head_formula():
+    result = _build(
+        flow_rates_m3_s=[0.0005, 0.001],
+        upstream_pipe_length_m=0.0,
+        local_loss_coefficient=3.0,
+    )
+    for item in result["flow_details"]:
+        expected = 3.0 * item["velocity_m_s"] ** 2 / (2.0 * 9.80665)
+        assert item["local_loss_m"] == pytest.approx(expected)
+
+
+def test_doubling_local_loss_coefficient_doubles_local_head_loss():
+    single = _build(local_loss_coefficient=2.0)
+    doubled = _build(local_loss_coefficient=4.0)
+    for first, second in zip(single["flow_details"], doubled["flow_details"]):
+        assert second["local_loss_m"] == pytest.approx(
+            2.0 * first["local_loss_m"]
+        )
+
+
+def test_zero_length_pipe_removes_friction_but_preserves_local_losses():
+    result = _build(upstream_pipe_length_m=0.0)
+    for item in result["flow_details"]:
+        assert item["friction_loss_m"] == 0.0
+        if item["flow_m3_s"] > 0.0:
+            assert item["local_loss_m"] > 0.0
+        else:
+            assert item["local_loss_m"] == 0.0
+
