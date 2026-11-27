@@ -119,6 +119,10 @@ from .pipe_diameter_payback import (
     analyze_pipe_diameter_payback,
 )
 
+from .crop_water import (
+    calculate_crop_water_requirements,
+)
+
 from .design_workflow import (
     design_drip_irrigation_system,
     design_irrigation_sectors,
