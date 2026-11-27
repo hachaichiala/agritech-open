@@ -32,6 +32,11 @@ result = design_drip_irrigation_system(
         "manifold_diameter_m": 0.040,
         "inlet_pressure_bar": 1.5,
         "hazen_williams_c": 150,
+        # Optional elevations in meters, relative to the manifold inlet.
+        # Positive values indicate uphill takeoffs.
+        "lateral_takeoff_elevations_m": [0.0] * 10,
+        # Optional emitter elevations in meters, relative to each lateral inlet.
+        "emitter_elevations_m": [0.0] * 20,
     },
     pressure_range=EmitterPressureRange(
         minimum_bar=1.0,
@@ -94,11 +99,11 @@ print(result["pump_system_analysis"]["pump_analysis"])
 
 ## حدود النموذج
 
-1. يفترض تحليل القطاع خطوطاً متساوية الطول وعدد النقاطات والتدفق، ومجمعاً أفقياً ذا تفرعات متساوية.
+1. يفترض تحليل القطاع خطوطاً متساوية الطول وعدد النقاطات والتدفق، وتفرعات متساوية التباعد. يدعم النموذج إدخال مناسيب مخارج المجمع ومناسيب النقاطات اختيارياً.
 2. يمثل منحنى النظام أنبوباً رئيسياً واحداً ومعامل فاقد موضعياً إجمالياً.
 3. أدخل منحنى المضخة وكفاءة المضخة من بيانات الشركة المصنّعة.
 4. أدخل مجال ضغط النقاطة من بيانات المنتج. المجال الافتراضي 1 إلى 4 bar ليس مواصفة عامة.
-5. أضف فواقد المرشح والصمامات والعدادات وخط السحب وفروق المناسيب عندما تكون مؤثرة.
+5. أدخل مناسيب مخارج المجمع في `lateral_takeoff_elevations_m` ومناسيب النقاطات في `emitter_elevations_m`. القيم موجبة عند الصعود، وتقاس كل مجموعة نسبةً إلى مدخلها. أدخل فرق المنسوب بين مصدر الماء ومدخل القطاع ضمن `static_elevation_difference_m`. أضف فواقد المرشح والصمامات والعدادات وخط السحب أيضاً.
 6. لا تعتمد النتائج للتنفيذ قبل مراجعة الموقع وبيانات المعدات والتحقق الميداني.
 
 ## تشغيل الاختبارات
