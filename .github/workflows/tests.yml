@@ -19,8 +19,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pytest
-        run: python -m pip install pytest
+      - name: Install package and development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify installed command-line workflow
+        run: |
+          agritech-irrigation examples/drip_irrigation_design.json --output /tmp/agritech-report.json
+          python -c "import json; report=json.load(open('/tmp/agritech-report.json', encoding='utf-8')); assert 'sector_analysis' in report and 'pump_system_analysis' in report and 'design_duty' in report"
 
       - name: Run tests
         run: python -m pytest irrigation/tests -v
