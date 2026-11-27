@@ -190,3 +190,27 @@ def test_hazen_williams_loss_decreases_with_larger_diameter():
     assert larger < smaller
     assert larger == pytest.approx(smaller * ((0.06 / 0.05) ** -4.871))
 
+
+def test_minor_head_loss_scales_with_square_of_flow():
+    base = calculate_minor_head_loss(0.001, 0.05, 2.0)
+    doubled_flow = calculate_minor_head_loss(0.002, 0.05, 2.0)
+    assert doubled_flow == pytest.approx(4.0 * base)
+
+
+def test_minor_head_loss_scales_linearly_with_loss_coefficient():
+    base = calculate_minor_head_loss(0.001, 0.05, 1.5)
+    doubled_coefficient = calculate_minor_head_loss(0.001, 0.05, 3.0)
+    assert doubled_coefficient == pytest.approx(2.0 * base)
+
+
+def test_minor_head_loss_is_inversely_proportional_to_gravity():
+    standard = calculate_minor_head_loss(0.001, 0.05, 2.0, 9.80665)
+    doubled_gravity = calculate_minor_head_loss(0.001, 0.05, 2.0, 19.6133)
+    assert doubled_gravity == pytest.approx(0.5 * standard)
+
+
+def test_minor_head_loss_follows_inverse_fourth_diameter_power():
+    smaller = calculate_minor_head_loss(0.001, 0.05, 2.0)
+    larger = calculate_minor_head_loss(0.001, 0.06, 2.0)
+    assert larger == pytest.approx(smaller * (0.06 / 0.05) ** -4)
+
