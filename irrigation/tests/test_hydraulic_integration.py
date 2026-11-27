@@ -68,7 +68,10 @@ def test_tree_zone_to_lateral_and_pump_requirement(
     )
 
 
-from irrigation.calculations.dripline import (\n    calculate_pressure_at_each_emitter,\n    calculate_dripline_segment_head_losses,\n)
+from irrigation.calculations.dripline import (
+    calculate_pressure_at_each_emitter,
+    calculate_dripline_segment_head_losses,
+)
 from irrigation.calculations.system_curve import build_system_curve
 
 
