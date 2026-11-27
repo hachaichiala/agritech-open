@@ -106,7 +106,7 @@ def calculate_fao56_et0(
         raise ValueError("Calculated clear-sky radiation must be positive for this day and latitude.")
 
     net_shortwave = 0.77 * rs
-    cloudiness = max(0.0, min(rs / rso, 1.0))
+    cloudiness = max(0.3, min(rs / rso, 1.0))
     net_longwave = (
         4.903e-9
         * (((tmax + 273.16) ** 4 + (tmin + 273.16) ** 4) / 2.0)
