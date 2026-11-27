@@ -266,3 +266,56 @@ def test_rejects_overflow_in_electrical_power_from_tiny_motor_efficiency():
             pump_efficiency_percent=50,
             motor_efficiency_percent=1e-308,
         )
+
+
+def test_returns_normalized_float_inputs_in_result():
+    result = calculate_pump_power(
+        flow_m3_s=1,
+        head_m=12,
+        pump_efficiency_percent=75,
+        motor_efficiency_percent=90,
+        water_density_kg_m3=998,
+        gravity_m_s2=9.81,
+    )
+
+    assert result["flow_m3_s"] == 1.0
+    assert result["head_m"] == 12.0
+    assert result["pump_efficiency_percent"] == 75.0
+    assert result["motor_efficiency_percent"] == 90.0
+
+
+def test_custom_physical_constants_are_used_in_all_power_stages():
+    result = calculate_pump_power(
+        flow_m3_s=0.002,
+        head_m=8,
+        pump_efficiency_percent=80,
+        motor_efficiency_percent=90,
+        water_density_kg_m3=998,
+        gravity_m_s2=9.81,
+    )
+
+    expected_hydraulic = 998 * 9.81 * 0.002 * 8
+    expected_shaft = expected_hydraulic / 0.8
+    expected_electrical = expected_shaft / 0.9
+
+    assert result["hydraulic_power_w"] == pytest.approx(expected_hydraulic)
+    assert result["shaft_power_w"] == pytest.approx(expected_shaft)
+    assert result["electrical_input_power_w"] == pytest.approx(
+        expected_electrical
+    )
+
+
+def test_custom_physical_constants_do_not_force_motor_efficiency():
+    result = calculate_pump_power(
+        flow_m3_s=0.001,
+        head_m=10,
+        pump_efficiency_percent=70,
+        water_density_kg_m3=998,
+        gravity_m_s2=9.81,
+    )
+
+    assert result["motor_efficiency_percent"] is None
+    assert result["electrical_input_power_w"] is None
+    assert result["hydraulic_power_w"] == pytest.approx(
+        998 * 9.81 * 0.001 * 10
+    )
