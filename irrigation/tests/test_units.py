@@ -65,3 +65,31 @@ def test_pressure_conversions_round_trip():
 def test_zero_flow_converts_to_zero_in_both_directions():
     assert liters_per_hour_to_cubic_meters_per_second(0.0) == 0.0
     assert cubic_meters_per_second_to_liters_per_hour(0.0) == 0.0
+
+@pytest.mark.parametrize(
+    "flow_lph, expected_m3_s",
+    [
+        (1800.0, 0.0005),
+        (5400.0, 0.0015),
+        (9000.0, 0.0025),
+    ],
+)
+def test_flow_conversion_reference_values(flow_lph, expected_m3_s):
+    assert liters_per_hour_to_cubic_meters_per_second(flow_lph) == pytest.approx(
+        expected_m3_s
+    )
+
+
+@pytest.mark.parametrize(
+    "pressure_bar, expected_head_m",
+    [
+        (0.5, 5.0985810649),
+        (2.0, 20.3943242597),
+        (5.0, 50.9858106493),
+    ],
+)
+def test_pressure_conversion_reference_values(pressure_bar, expected_head_m):
+    assert bar_to_meters_of_water(pressure_bar) == pytest.approx(
+        expected_head_m, rel=1e-9
+    )
+
