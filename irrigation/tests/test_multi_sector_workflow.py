@@ -59,3 +59,26 @@ def test_multiple_sectors_receive_independent_sequential_pump_analysis():
         item["analysis"]["pump_system_analysis"]["pump_analysis"]["operating_point"]
         for item in result["sectors"]
     )
+
+
+def test_daily_schedule_calculates_sequential_runtime_and_capacity():
+    from irrigation.calculations import schedule_irrigation_sectors
+
+    design = {
+        "sectors": [
+            {"name": "trees", "analysis": {"design_duty": {"sector_design_flow_lph": 16.0}}},
+            {"name": "vegetables", "analysis": {"design_duty": {"sector_design_flow_lph": 24.0}}},
+        ]
+    }
+    result = schedule_irrigation_sectors(
+        sector_design=design,
+        daily_water_requirements_l={"trees": 80.0, "vegetables": 120.0},
+        available_runtime_hours_per_day=8.0,
+    )
+
+    assert result["operation_mode"] == "sequential_daily_irrigation_schedule"
+    assert [item["runtime_hours"] for item in result["sectors"]] == pytest.approx([5.0, 5.0])
+    assert result["summary"]["total_daily_water_requirement_l"] == pytest.approx(200.0)
+    assert result["summary"]["total_runtime_hours"] == pytest.approx(10.0)
+    assert result["summary"]["remaining_runtime_hours"] == pytest.approx(-2.0)
+    assert result["summary"]["fits_available_runtime"] is False
