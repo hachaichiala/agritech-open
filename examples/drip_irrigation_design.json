@@ -1,0 +1,74 @@
+{
+  "sector_parameters": {
+    "number_of_laterals": 10,
+    "emitters_per_lateral": 20,
+    "emitter_flow_lph": 4,
+    "lateral_length_m": 40,
+    "lateral_diameter_m": 0.016,
+    "manifold_length_m": 20,
+    "manifold_diameter_m": 0.04,
+    "inlet_pressure_bar": 1.5,
+    "hazen_williams_c": 150
+  },
+  "pressure_range": {
+    "minimum_bar": 1,
+    "maximum_bar": 4
+  },
+  "upstream_system_parameters": {
+    "static_elevation_difference_m": 3,
+    "upstream_pipe_length_m": 30,
+    "upstream_pipe_diameter_m": 0.04,
+    "hazen_williams_c": 150,
+    "local_loss_coefficient": 2,
+    "flow_rates_m3_s": [
+      0.0001,
+      0.0003,
+      0.0005,
+      0.001,
+      0.0015
+    ]
+  },
+  "pump_data": {
+    "manufacturer": "Example manufacturer",
+    "model": "Example pump",
+    "rated_motor_power_kw": 0.25,
+    "pump_curve": [
+      [
+        0.0001,
+        18.8
+      ],
+      [
+        0.0005,
+        17
+      ],
+      [
+        0.001,
+        12
+      ],
+      [
+        0.0015,
+        6
+      ]
+    ],
+    "efficiency_curve": [
+      [
+        0.0001,
+        30
+      ],
+      [
+        0.0005,
+        45
+      ],
+      [
+        0.001,
+        40
+      ],
+      [
+        0.0015,
+        25
+      ]
+    ]
+  },
+  "motor_efficiency_percent": 80,
+  "flow_match_tolerance_percent": 5
+}
