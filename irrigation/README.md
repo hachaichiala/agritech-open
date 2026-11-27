@@ -16,6 +16,7 @@ The irrigation package provides engineering calculations and an integrated workf
 - Pump curve validation and operating-point calculation.
 - System curve, total dynamic head, pump power, and sector-pump compatibility.
 - Integrated sector-to-pump design workflow, with sequential analysis of multiple independent irrigation sectors.
+- Daily sequential irrigation scheduling from user-supplied water volumes, with runtime and available-hours checks.
 - JSON command-line interface.
 
 ## Run a design
@@ -27,6 +28,8 @@ python -m irrigation design examples/drip_irrigation_design.json --output report
 ```
 
 See [QUICKSTART_AR.md](../QUICKSTART_AR.md) for input structure, units, examples, and model limitations.
+
+Daily operation times can be calculated with `schedule_irrigation_sectors`, using the multi-sector design result, a daily water volume for each sector in litres, and available pump runtime in hours per day. The function reports each sector runtime and whether the total fits the daily time window. Water demand must be supplied by the user. Crop evapotranspiration and application efficiency are not estimated.
 
 Multiple sectors can be analyzed through `design_irrigation_sectors`. Each sector receives an independent pump/system analysis using the shared upstream and pump data. Simultaneous operation of several sectors and shared-header hydraulics are not modeled by this function.
 
