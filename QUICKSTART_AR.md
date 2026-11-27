@@ -106,3 +106,19 @@ print(result["pump_system_analysis"]["pump_analysis"])
 ```bash
 python -m pytest irrigation/tests -v
 ```
+
+## التشغيل من سطر الأوامر
+
+يوفر المشروع واجهة JSON لتشغيل التحليل دون كتابة برنامج Python:
+
+```bash
+python -m irrigation design examples/drip_irrigation_design.json --output report.json
+```
+
+يمكن تمرير البيانات عبر الإدخال القياسي أيضاً:
+
+```bash
+cat examples/drip_irrigation_design.json | python -m irrigation design -
+```
+
+الملف الموجود في `examples/drip_irrigation_design.json` مثال تعليمي ببيانات افتراضية. استبدل منحنى المضخة وكفاءتها وأبعاد الأنابيب وضغوط النقاطات ببيانات المعدات والموقع قبل أي استخدام هندسي.
