@@ -74,3 +74,62 @@ def test_requires_explicit_efficiency_without_efficiency_curve():
     }
     with pytest.raises(ValueError, match="Pump efficiency is required"):
         analyze_pump_system(pump, SYSTEM_PARAMETERS)
+
+
+
+def test_integrated_analysis_checks_rated_motor_shaft_power():
+    pump = {
+        **PUMP_DATA,
+        "rated_motor_power_kw": 1.0,
+    }
+    result = analyze_pump_system(
+        pump,
+        SYSTEM_PARAMETERS,
+        motor_efficiency_percent=80.0,
+    )
+
+    analysis = result["pump_analysis"]
+    check = analysis["motor_power_check"]
+
+    assert check["rated_motor_power_kw"] == pytest.approx(1.0)
+    assert check["required_shaft_power_kw"] == pytest.approx(
+        analysis["power"]["shaft_power_w"] / 1000.0
+    )
+    assert check["available_margin_kw"] == pytest.approx(
+        1.0 - check["required_shaft_power_kw"]
+    )
+    assert check["within_rated_power"] is True
+    assert check["rating_interpretation"] == "mechanical_shaft_output"
+
+
+def test_integrated_analysis_applies_motor_efficiency_to_electrical_input():
+    result = analyze_pump_system(
+        PUMP_DATA,
+        SYSTEM_PARAMETERS,
+        motor_efficiency_percent=80.0,
+    )
+
+    power = result["pump_analysis"]["power"]
+
+    assert power["electrical_input_power_w"] == pytest.approx(
+        power["shaft_power_w"] / 0.8
+    )
+    assert power["electrical_input_power_w"] > power["shaft_power_w"]
+
+
+def test_integrated_analysis_accepts_explicit_pump_efficiency_without_curve():
+    pump = {
+        "manufacturer": "Test",
+        "model": "P-1",
+        "pump_curve": PUMP_DATA["pump_curve"],
+    }
+    result = analyze_pump_system(
+        pump,
+        SYSTEM_PARAMETERS,
+        pump_efficiency_percent=55.0,
+    )
+
+    analysis = result["pump_analysis"]
+
+    assert analysis["power"]["pump_efficiency_percent"] == pytest.approx(55.0)
+    assert analysis["pump_efficiency_source"] == "explicit_input"
