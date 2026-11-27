@@ -152,10 +152,10 @@ def design_drip_irrigation_system(
         },
         "method": "integrated_sector_system_curve_and_pump_operating_analysis",
         "limitations": [
-            "The sector model assumes equal laterals and a level, equally spaced manifold.",
+            "The sector model assumes equal laterals and equally spaced manifold takeoffs. Optional elevation profiles account for static level changes along the manifold and laterals.",
             "The upstream system model represents one pipe and one combined local-loss coefficient.",
             "Pump and emitter curves must come from the selected manufacturers.",
             "The flow-match result is a screening comparison, not a field-performance guarantee.",
-            "Filter, valve, suction, transient-pressure, and site elevation effects must be included when material.",
+            "Filter, valve, suction, and transient-pressure losses must be included when material. Static elevations within the sector belong in the sector elevation profiles, while source-to-sector elevation belongs in the upstream system parameters.",
         ],
     }
