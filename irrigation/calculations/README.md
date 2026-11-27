@@ -1,115 +1,45 @@
-Hydraulic Calculations
+# وحدات الحسابات الهيدروليكية
 
+يحتوي هذا المجلد على وحدات الحسابات الفعلية لمحرك تصميم شبكات الري بالتنقيط.
 
-This directory contains the engineering calculation modules for drip irrigation network design.
+## الوظائف المتاحة
 
+| المجال | الوحدة | الوظيفة |
+|---|---|---|
+| التدفق | `flow.py`, `emitters.py` | التدفق الكلي وتدفق النقاطات ومناطق الأشجار |
+| الفواقد | `pressure_loss.py`, `dripline.py` | فواقد Hazen-Williams وفواقد الخطوط بالتنقيط |
+| الضغط | `emitter_pressure.py` | تحليل ضغط النقاطات، بما فيها النقاطات المعوضة وغير المعوضة |
+| المجمعات | `manifold.py` | التدفق والفواقد وتوزيع الضغط عند مخارج المجمع |
+| القطاعات | `irrigation_sector.py` | تحليل قطاع يتكون من مجمع وخطوط تنقيط |
+| الأنابيب | `pipe_specifications.py`, `pipe_velocity.py` | القطر الداخلي، تصنيف الضغط، سرعة الجريان |
+| اختيار الأقطار | `pipe_diameter_comparison.py`, `pipe_diameter_decision.py` | مقارنة الأقطار ودعم قرار الاختيار |
+| اقتصاديات الأنابيب | `pipe_economic_comparison.py`, `pipe_economic_sensitivity.py`, `pipe_lifecycle_cost.py`, `pipe_diameter_payback.py` | مقارنة التكلفة ودورة الحياة وفترة الاسترداد |
+| المضخات | `pump_data.py`, `pump_curve.py`, `pump_head.py`, `pump_power.py` | التحقق من بيانات المضخة، نقطة التشغيل، HMT والقدرة |
+| منحنى النظام | `system_curve.py` | إنشاء منحنى النظام من الارتفاع والفواقد والضغط المطلوب |
+| التوافق | `sector_pump_compatibility.py`, `operating_analysis.py` | تحليل توافق المضخة مع القطاع ونقطة التشغيل |
+| سير التصميم | `design_workflow.py` | ربط تحليل القطاع بمنحنى النظام والمضخة |
 
-Planned calculation modules
+## التشغيل المتكامل
 
+تتوفر الدالة العامة:
 
+`design_drip_irrigation_system`
 
+وتربط تحليل القطاع بمنحنى النظام ونقطة تشغيل المضخة والقدرة. كما تتوفر واجهة سطر أوامر عبر:
 
-Flow rate calculations
+`python -m irrigation design examples/drip_irrigation_design.json`
 
+راجع [دليل التشغيل العربي](../../QUICKSTART_AR.md) للحصول على مثال كامل.
 
-Water velocity in pipes
+## المنهجية والقيود
 
+- تعتمد فواقد الأنابيب على معادلة Hazen-Williams في الوحدات الموثقة داخل كل دالة.
+- تمثل منحنيات المضخة والنظام بنقاط متتابعة مع استيفاء خطي بين النقاط.
+- تعتمد دقة النتائج على إدخال الأقطار الداخلية الفعلية وبيانات المضخة والنقاطات من الشركات المصنّعة.
+- بعض نماذج القطاع تفترض أطوالاً وتوزيعاً متماثلاً للخطوط. راجع قيود كل دالة قبل اعتماد التصميم.
+- يجب إضافة فواقد المرشحات والصمامات والعدادات وخط السحب وفروق المناسيب عندما تكون مؤثرة.
+- النتائج الحسابية لا تغني عن مراجعة الموقع والتحقق الميداني.
 
-Pipe diameter selection
+## معايير التطوير
 
-
-Hazen-Williams head loss
-
-
-Pressure requirements
-
-
-Total Dynamic Head (TDH)
-
-
-Irrigation sector flow calculations
-
-
-
-
-Engineering standards
-
-
-Each calculation module must include:
-
-
-
-
-Mathematical equations and units.
-
-
-Input validation.
-
-
-Documented assumptions.
-
-
-Reference examples.
-
-
-Automated tests.
-
-
-
-
-Status
-
-
-Planned. No calculation code has been implemented yet.
-
-## Dripline Hydraulic Calculations
-
-The `dripline.py` module estimates friction head loss
-along a drip irrigation lateral.
-
-Current assumptions:
-
-- Emitters are uniformly spaced.
-- Emitter discharge is constant.
-- Pipe diameter is constant.
-- Flow decreases after each emitter.
-- The pipe is horizontal.
-- Minor losses and elevation changes are excluded.
-
-The calculation uses the Hazen-Williams equation
-for each pipe segment.
-
-The current model is an initial approximation.
-Further hydraulic validation is required before
-using the results for field installation.
-
-
-## Pressure-Compensating Emitters
-
-The `emitter_pressure.py` module provides tools
-for checking pressure conditions in drip irrigation laterals
-using pressure-compensating (PC) emitters.
-
-Current features:
-
-- Configurable minimum and maximum operating pressure.
-- Inlet and outlet pressure validation.
-- Dripline head loss integration.
-- Automatic PC pressure range verification.
-
-Example assumptions:
-
-- Inlet pressure: 2 bar.
-- Temporary PC pressure range: 1 to 4 bar.
-- Horizontal dripline.
-- Uniform emitter spacing.
-
-Important:
-
-The default pressure range is temporary.
-Replace these values with the manufacturer's specifications
-before using the model for field design.
-
-The current model does not yet calculate pressure
-at every individual emitter.
-
+كل وحدة جديدة يجب أن توثق المعادلات والوحدات والمدخلات والافتراضات ومجالات الصلاحية ومصادر البيانات. تضاف اختبارات عند إدخال سلوك جديد أو تغيير سلوك قائم، مع تجنب تكرار الاختبارات المتشابهة.
