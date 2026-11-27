@@ -93,3 +93,30 @@ def test_pressure_conversion_reference_values(pressure_bar, expected_head_m):
         expected_head_m, rel=1e-9
     )
 
+@pytest.mark.parametrize(
+    "flow_m3_s, expected_lph",
+    [
+        (0.0005, 1800.0),
+        (0.0015, 5400.0),
+        (0.0025, 9000.0),
+    ],
+)
+def test_reverse_flow_conversion_reference_values(flow_m3_s, expected_lph):
+    assert cubic_meters_per_second_to_liters_per_hour(flow_m3_s) == pytest.approx(
+        expected_lph
+    )
+
+
+@pytest.mark.parametrize(
+    "head_m, expected_pressure_bar",
+    [
+        (5.0985810649, 0.5),
+        (20.3943242597, 2.0),
+        (50.9858106493, 5.0),
+    ],
+)
+def test_reverse_pressure_conversion_reference_values(head_m, expected_pressure_bar):
+    assert meters_of_water_to_bar(head_m) == pytest.approx(
+        expected_pressure_bar, rel=1e-9
+    )
+
