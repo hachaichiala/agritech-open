@@ -247,3 +247,22 @@ def test_doubling_density_and_gravity_quadruples_hydraulic_power():
     assert adjusted["hydraulic_power_w"] == pytest.approx(
         4.0 * baseline["hydraulic_power_w"]
     )
+
+
+def test_rejects_overflow_in_shaft_power_from_tiny_pump_efficiency():
+    with pytest.raises(ValueError, match="not finite"):
+        calculate_pump_power(
+            flow_m3_s=0.001,
+            head_m=10,
+            pump_efficiency_percent=1e-308,
+        )
+
+
+def test_rejects_overflow_in_electrical_power_from_tiny_motor_efficiency():
+    with pytest.raises(ValueError, match="not finite"):
+        calculate_pump_power(
+            flow_m3_s=0.001,
+            head_m=10,
+            pump_efficiency_percent=50,
+            motor_efficiency_percent=1e-308,
+        )
