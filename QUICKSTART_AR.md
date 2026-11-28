@@ -181,6 +181,36 @@ print(plan["schedule"]["summary"]["fits_available_runtime"])
 
 يجب أن تطابق أسماء المفاتيح في `crops_by_sector` أسماء القطاعات في التصميم. أدخل Kc والمساحة وفق المحاصيل ومراحل نموها الفعلية. تعرض النتيجة حجم الري الإجمالي اليومي لكل قطاع وزمن تشغيله، ثم توضح ما إذا كان مجموع الأزمنة يتناسب مع ساعات التشغيل المتاحة. لا تخصم الدالة المطر ولا تضيف احتياجات الغسيل أو تعديلات الملوحة.
 
+
+## تقدير فاصل الري من خصائص التربة
+
+استخدم `calculate_irrigation_trigger` لتقدير عدد الأيام بين الريات وكمية إعادة الملء وزمن التشغيل:
+
+```python
+from irrigation.calculations import calculate_irrigation_trigger
+
+trigger = calculate_irrigation_trigger(
+    field_capacity_vwc=0.30,
+    wilting_point_vwc=0.15,
+    root_depth_m=0.60,
+    depletion_fraction=0.50,
+    crop_et_mm_day=5.0,
+    irrigated_area_m2=100.0,
+    application_efficiency_percent=90.0,
+    sector_flow_lph=1000.0,
+)
+
+print(trigger["soil_water"]["total_available_water_mm"])
+print(trigger["soil_water"]["readily_available_water_mm"])
+print(trigger["irrigation"]["estimated_interval_days"])
+print(trigger["irrigation"]["gross_application_volume_l"])
+print(trigger["irrigation"]["estimated_runtime_hours"])
+```
+
+في هذا المثال، TAW يساوي 90 مم، وRAW يساوي 45 مم، وفاصل الري التقديري 9 أيام. حجم إعادة الملء الإجمالي 5000 لتر، وزمن التشغيل 5 ساعات عند تدفق 1000 لتر/ساعة.
+
+أدخل FC وWP ككسور حجمية، مثل 0.30 لا 30. استخدم عمق الجذور الفعال وقيمة p الملائمة للمحصول ومرحلة النمو. هذا تقدير تخطيطي يفترض تجانس التربة وإعادة الملء عند استنزاف RAW. لا يأخذ في الحسبان المطر أو الجزء المبتل تحت النقاطات أو الملوحة. راقب رطوبة التربة لتعديل موعد الري وكمية الماء.
+
 ## الوحدات
 
 - التدفق في بيانات المضخة ومنحنى النظام: متر مكعب في الثانية.
