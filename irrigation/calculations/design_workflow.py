@@ -10,6 +10,7 @@ import math
 from .emitter_pressure import EmitterPressureRange
 from .irrigation_sector import analyze_irrigation_sector
 from .operating_analysis import analyze_pump_system
+from .crop_water import calculate_crop_water_requirements
 
 
 def design_drip_irrigation_system(
@@ -338,3 +339,77 @@ def schedule_irrigation_sectors(
         ],
     }
 
+
+
+def plan_daily_irrigation_from_crops(
+    sector_design,
+    crops_by_sector,
+    et0_mm_day,
+    available_runtime_hours_per_day,
+    application_efficiency_percent=90.0,
+):
+    """
+    Calculate crop water demand for each designed sector and schedule runtime.
+
+    crops_by_sector maps each designed sector name to a non-empty crop list.
+    Each crop entry follows calculate_crop_water_requirements. Gross daily
+    crop demand, including the supplied application-efficiency adjustment,
+    is passed to the sequential sector scheduler.
+    """
+    if not isinstance(sector_design, dict):
+        raise ValueError("Sector design must be a dictionary.")
+    sectors = sector_design.get("sectors")
+    if not isinstance(sectors, list) or not sectors:
+        raise ValueError("Sector design must contain a non-empty sectors list.")
+    if not isinstance(crops_by_sector, dict):
+        raise ValueError("Crops by sector must be a dictionary.")
+
+    sector_names = []
+    for index, item in enumerate(sectors, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"Sector {index} must be a dictionary.")
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"Sector {index} must have a non-empty name.")
+        sector_names.append(name)
+
+    if len(set(sector_names)) != len(sector_names):
+        raise ValueError("Designed sector names must be unique.")
+    if set(crops_by_sector) != set(sector_names):
+        raise ValueError(
+            "Crop groups must match the designed sector names exactly."
+        )
+
+    crop_water_results = {}
+    daily_requirements_l = {}
+    for name in sector_names:
+        result = calculate_crop_water_requirements(
+            crops=crops_by_sector[name],
+            et0_mm_day=et0_mm_day,
+            application_efficiency_percent=application_efficiency_percent,
+        )
+        crop_water_results[name] = result
+        daily_requirements_l[name] = (
+            result["summary"]["gross_irrigation_requirement_l_day"]
+        )
+
+    schedule = schedule_irrigation_sectors(
+        sector_design=sector_design,
+        daily_water_requirements_l=daily_requirements_l,
+        available_runtime_hours_per_day=available_runtime_hours_per_day,
+    )
+
+    return {
+        "method": "crop_water_requirements_linked_to_sequential_sector_schedule",
+        "et0_mm_day": float(et0_mm_day),
+        "application_efficiency_percent": float(application_efficiency_percent),
+        "crop_water_by_sector": crop_water_results,
+        "daily_irrigation_requirements_l": daily_requirements_l,
+        "schedule": schedule,
+        "limitations": [
+            "Crop coefficients and planted areas must represent the site and current growth stage.",
+            "ET0 must represent the selected site's daily reference evapotranspiration.",
+            "Rainfall, leaching, salinity, and soil-water storage adjustments are not included.",
+            "Sector operation is sequential and assumes each sector operates at its design flow.",
+        ],
+    }
