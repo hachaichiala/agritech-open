@@ -138,3 +138,8 @@ from .design_workflow import (
 from .soil_water import (
     calculate_irrigation_trigger,
 )
+
+
+from .leaching import (
+    calculate_drip_leaching_requirement,
+)
