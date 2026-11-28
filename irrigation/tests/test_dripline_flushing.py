@@ -12,6 +12,7 @@ def test_calculates_per_lateral_and_network_flushing_requirements():
         flushing_velocity_m_s=0.3,
         number_of_laterals=10,
         pipe_volume_exchanges=2.0,
+        available_flow_lph=expected_flow_lph * 3.0,
     )
 
     area = math.pi * 0.016 ** 2 / 4.0
@@ -39,4 +40,10 @@ def test_calculates_per_lateral_and_network_flushing_requirements():
     )
     assert result["all_laterals"]["sequential_runtime_minutes"] == pytest.approx(
         expected_runtime_minutes * 10
+    )
+    assert result["source_capacity_assessment"]["maximum_simultaneous_laterals"] == 3
+    assert result["source_capacity_assessment"]["number_of_batches"] == 4
+    assert result["source_capacity_assessment"]["status"] == "multiple_batches"
+    assert result["source_capacity_assessment"]["estimated_runtime_minutes_at_available_flow"] == pytest.approx(
+        expected_runtime_minutes * 4
     )
