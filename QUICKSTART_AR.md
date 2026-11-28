@@ -257,3 +257,28 @@ cat examples/drip_irrigation_design.json | python -m irrigation design -
 ```
 
 الملف الموجود في `examples/drip_irrigation_design.json` مثال تعليمي ببيانات افتراضية. استبدل منحنى المضخة وكفاءتها وأبعاد الأنابيب وضغوط النقاطات ببيانات المعدات والموقع قبل أي استخدام هندسي.
+
+
+## تقدير الغسيل للحد من تراكم الأملاح في الري بالتنقيط
+
+```python
+from irrigation.calculations import calculate_drip_leaching_requirement
+
+leaching = calculate_drip_leaching_requirement(
+    irrigation_water_ec_ds_m=1.2,
+    crop_max_soil_ec_ds_m=3.0,
+    net_irrigation_depth_mm=5.0,
+    irrigated_area_m2=100.0,
+    application_efficiency_percent=90.0,
+    sector_flow_lph=1000.0,
+)
+
+print(leaching["leaching"]["required_leaching_percent"])
+print(leaching["leaching"]["additional_net_leaching_depth_mm"])
+print(leaching["application"]["gross_application_volume_l"])
+print(leaching["application"]["estimated_runtime_hours"])
+```
+
+تستخدم الدالة معادلة الري بالتنقيط عالي التواتر: LR = ECw ÷ (2 × ECe_max). في المثال، ECw يساوي 1.2 dS/m وECe_max يساوي 3 dS/m، فتكون نسبة الغسيل التقديرية 20%. يرتفع عمق الاحتياج الصافي من 5 إلى 6.25 مم قبل تصحيح كفاءة التطبيق. أدخل ملوحة الماء من تحليل مخبري، واختر ECe_max وفق المحصول ومستوى الإنتاج المقبول.
+
+هذا تقدير أولي. يشترط صرف فعال لإخراج الأملاح من منطقة الجذور. لا تضف ماء الغسيل إلى برنامج الري دون فحص الصرف وملوحة التربة وماء الري. لا تستخدم هذه المعادلة المخصصة للري بالتنقيط لحساب الغسيل بالري السطحي.
