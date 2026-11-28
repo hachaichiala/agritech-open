@@ -151,6 +151,36 @@ daily_volume_m3 = water["summary"]["gross_irrigation_requirement_m3_day"]
 
 أدخل ET₀ اليومي للموقع، واختر Kc حسب المحصول ومرحلة نموه. كفاءة التطبيق تقدير يعكس حالة شبكة الري. لا تحسب الوحدة ET₀ من بيانات الطقس، ولا تخصم المطر أو تضيف احتياجات الغسيل ومعالجة الملوحة. يمكن تمرير الحجم الإجمالي لكل قطاع إلى `schedule_irrigation_sectors` لحساب مدة تشغيله.
 
+
+## ربط احتياجات المحاصيل بجدولة القطاعات
+
+بعد إنشاء تصميم القطاعات عبر `design_irrigation_sectors`، استخدم الدالة التالية لحساب الاحتياج اليومي لكل قطاع ثم مدة تشغيله:
+
+```python
+from irrigation.calculations import plan_daily_irrigation_from_crops
+
+plan = plan_daily_irrigation_from_crops(
+    sector_design=sector_design,
+    crops_by_sector={
+        "قطاع الأشجار": [
+            {"name": "أشجار مثمرة", "kc": 0.8, "area_m2": 500.0},
+        ],
+        "قطاع الخضروات": [
+            {"name": "خضروات", "kc": 1.1, "area_m2": 300.0},
+        ],
+    },
+    et0_mm_day=5.0,
+    application_efficiency_percent=90.0,
+    available_runtime_hours_per_day=8.0,
+)
+
+print(plan["daily_irrigation_requirements_l"])
+print(plan["schedule"]["sectors"])
+print(plan["schedule"]["summary"]["fits_available_runtime"])
+```
+
+يجب أن تطابق أسماء المفاتيح في `crops_by_sector` أسماء القطاعات في التصميم. أدخل Kc والمساحة وفق المحاصيل ومراحل نموها الفعلية. تعرض النتيجة حجم الري الإجمالي اليومي لكل قطاع وزمن تشغيله، ثم توضح ما إذا كان مجموع الأزمنة يتناسب مع ساعات التشغيل المتاحة. لا تخصم الدالة المطر ولا تضيف احتياجات الغسيل أو تعديلات الملوحة.
+
 ## الوحدات
 
 - التدفق في بيانات المضخة ومنحنى النظام: متر مكعب في الثانية.
