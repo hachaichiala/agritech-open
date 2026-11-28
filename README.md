@@ -227,6 +227,7 @@ Active development of the irrigation calculation engine.
 - Pump curves, operating point, system curve, HMT, and power.
 - Integrated sector-to-pump workflow.
 - JSON command-line interface.
+- Daily crop-water demand and sequential sector runtime planning from ET₀, Kc, planted area, and application efficiency.
 
 ## Hydraulic Methodology
 
@@ -243,7 +244,7 @@ python -m pip install -e ".[dev]"
 Run the example design:
 
 ```bash
-agritech-irrigation examples/drip_irrigation_design.json --output report.json
+agritech-irrigation design examples/drip_irrigation_design.json --output report.json
 ```
 
 The example uses illustrative values only. Replace pump curves, emitter pressure limits, pipe dimensions, and site data with verified project information.
