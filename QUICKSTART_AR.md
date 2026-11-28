@@ -282,4 +282,23 @@ print(leaching["application"]["estimated_runtime_hours"])
 تستخدم الدالة معادلة الري بالتنقيط عالي التواتر: LR = ECw ÷ (2 × ECe_max). في المثال، ECw يساوي 1.2 dS/m وECe_max يساوي 3 dS/m، فتكون نسبة الغسيل التقديرية 20%. يرتفع عمق الاحتياج الصافي من 5 إلى 6.25 مم قبل تصحيح كفاءة التطبيق. أدخل ملوحة الماء من تحليل مخبري، واختر ECe_max وفق المحصول ومستوى الإنتاج المقبول.
 
 هذا تقدير أولي. يشترط صرف فعال لإخراج الأملاح من منطقة الجذور. لا تضف ماء الغسيل إلى برنامج الري دون فحص الصرف وملوحة التربة وماء الري. لا تستخدم هذه المعادلة المخصصة للري بالتنقيط لحساب الغسيل بالري السطحي.
-\n\n## حساب احتياجات غسل خطوط التنقيط\n\n```python\nfrom irrigation.calculations import calculate_dripline_flushing_requirement\n\nflushing = calculate_dripline_flushing_requirement(\n    internal_diameter_m=0.016,\n    lateral_length_m=50.0,\n    flushing_velocity_m_s=0.3,\n    number_of_laterals=10,\n    pipe_volume_exchanges=2.0,\n)\n\nprint(flushing[\"per_lateral\"])\nprint(flushing[\"all_laterals\"])\n```\n\nأدخل القطر الداخلي الفعلي للخط، وطوله، وسرعة الغسل التي تحددها وفق تعليمات الشركة المصنعة. يحدد `pipe_volume_exchanges` عدد مرات تبديل حجم الماء الداخلي للأنبوب. تعرض النتيجة التدفق والحجم والزمن لكل خط، والحجم والتدفق اللازمين لغسل جميع الخطوط بالتزامن، أو زمن غسلها بالتتابع. القيم في المثال توضيحية وليست توصية تشغيلية. لا يشمل الحساب غسل المجمع أو المرشح أو الأنبوب الرئيسي، ولا يحسب ضغط المصدر أو قدرة الشبكة على توفير التدفق المطلوب.\n
+
+
+## حساب احتياجات غسل خطوط التنقيط
+
+```python
+from irrigation.calculations import calculate_dripline_flushing_requirement
+
+flushing = calculate_dripline_flushing_requirement(
+    internal_diameter_m=0.016,
+    lateral_length_m=50.0,
+    flushing_velocity_m_s=0.3,
+    number_of_laterals=10,
+    pipe_volume_exchanges=2.0,
+)
+
+print(flushing[\"per_lateral\"])
+print(flushing[\"all_laterals\"])
+```
+
+أدخل القطر الداخلي الفعلي للخط، وطوله، وسرعة الغسل التي تحددها وفق تعليمات الشركة المصنعة. يحدد `pipe_volume_exchanges` عدد مرات تبديل حجم الماء الداخلي للأنبوب. تعرض النتيجة التدفق والحجم والزمن لكل خط، والحجم والتدفق اللازمين لغسل جميع الخطوط بالتزامن، أو زمن غسلها بالتتابع. القيم في المثال توضيحية وليست توصية تشغيلية. لا يشمل الحساب غسل المجمع أو المرشح أو الأنبوب الرئيسي، ولا يحسب ضغط المصدر أو قدرة الشبكة على توفير التدفق المطلوب.
