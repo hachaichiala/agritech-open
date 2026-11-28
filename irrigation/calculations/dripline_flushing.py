@@ -35,7 +35,7 @@ def calculate_dripline_flushing_requirement(
         lateral_length_m: Length of one lateral (m).
         flushing_velocity_m_s: User-selected mean water velocity (m/s).
         number_of_laterals: Number of identical laterals to flush.
-            pipe_volume_exchanges: Flushing volume as a multiple of one lateral's
+        pipe_volume_exchanges: Flushing volume as a multiple of one lateral's
             internal water volume. The value must be selected by the designer.
         available_flow_lph: Optional measured or verified source flow available
             for flushing, in L/h. When supplied, the result estimates how many
@@ -95,9 +95,10 @@ def calculate_dripline_flushing_requirement(
 
     capacity = None
     if available_flow is not None:
-        max_parallel = min(
-            number_of_laterals,
-            math.floor(available_flow / flow_lph + 1e-12),
+        max_parallel = (
+            number_of_laterals
+            if available_flow >= simultaneous_flow_lph
+            else min(number_of_laterals, math.floor(available_flow / flow_lph + 1e-12))
         )
         feasible = max_parallel >= 1
         batches = math.ceil(number_of_laterals / max_parallel) if feasible else None
@@ -131,6 +132,7 @@ def calculate_dripline_flushing_requirement(
             "flushing_velocity_m_s": velocity,
             "number_of_laterals": number_of_laterals,
             "pipe_volume_exchanges": exchanges,
+            "available_flow_lph": available_flow,
         },
         "per_lateral": {
             "internal_pipe_volume_l": pipe_volume_m3 * 1000.0,
