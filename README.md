@@ -228,6 +228,7 @@ Active development of the irrigation calculation engine.
 - Integrated sector-to-pump workflow.
 - JSON command-line interface.
 - Daily crop-water demand and sequential sector runtime planning from ET₀, Kc, planted area, and application efficiency.
+- FAO-56 soil-water storage, irrigation trigger interval, refill volume, and sector runtime estimates.
 
 ## Hydraulic Methodology
 
