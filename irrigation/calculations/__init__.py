@@ -143,3 +143,8 @@ from .soil_water import (
 from .leaching import (
     calculate_drip_leaching_requirement,
 )
+
+
+from .dripline_flushing import (
+    calculate_dripline_flushing_requirement,
+)
