@@ -82,3 +82,35 @@ def test_daily_schedule_calculates_sequential_runtime_and_capacity():
     assert result["summary"]["total_runtime_hours"] == pytest.approx(10.0)
     assert result["summary"]["remaining_runtime_hours"] == pytest.approx(-2.0)
     assert result["summary"]["fits_available_runtime"] is False
+
+
+def test_crop_water_planning_connects_sector_demand_to_daily_runtime():
+    from irrigation.calculations import plan_daily_irrigation_from_crops
+
+    design = {
+        "sectors": [
+            {"name": "trees", "analysis": {"design_duty": {"sector_design_flow_lph": 16.0}}},
+            {"name": "vegetables", "analysis": {"design_duty": {"sector_design_flow_lph": 24.0}}},
+        ]
+    }
+
+    result = plan_daily_irrigation_from_crops(
+        sector_design=design,
+        crops_by_sector={
+            "trees": [{"name": "young_trees", "kc": 0.8, "area_m2": 10.0}],
+            "vegetables": [{"name": "vegetables", "kc": 1.2, "area_m2": 10.0}],
+        },
+        et0_mm_day=5.0,
+        application_efficiency_percent=80.0,
+        available_runtime_hours_per_day=7.0,
+    )
+
+    assert result["daily_irrigation_requirements_l"] == pytest.approx({
+        "trees": 50.0,
+        "vegetables": 75.0,
+    })
+    assert [
+        item["runtime_hours"] for item in result["schedule"]["sectors"]
+    ] == pytest.approx([3.125, 3.125])
+    assert result["schedule"]["summary"]["total_runtime_hours"] == pytest.approx(6.25)
+    assert result["schedule"]["summary"]["fits_available_runtime"] is True
