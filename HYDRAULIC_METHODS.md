@@ -107,7 +107,31 @@ The emitter pressure analysis compares calculated pressure values with the confi
 
 The endpoint check compares inlet and outlet pressures. The detailed distribution function checks the calculated pressure at each emitter. These checks indicate pressure-range compliance. They are not, by themselves, a complete calculation of application uniformity, manufacturing variation, clogging, or actual emitter discharge.
 
-## 6. Validation still required for detailed design
+## 6. High-frequency drip leaching estimate
+
+For high-frequency drip irrigation, the package estimates the leaching fraction with:
+
+\[
+LR = \frac{EC_w}{2 EC_{e,max}}
+\]
+
+Where:
+
+- \\(LR\\): estimated leaching fraction.
+- \\(EC_w\\): electrical conductivity of irrigation water, dS/m.
+- \\(EC_{e,max}\\): maximum tolerated soil saturation-extract electrical conductivity for the selected crop and yield target, dS/m.
+
+The net irrigation depth including leaching is calculated as:
+
+\[
+I_n = \frac{I_c}{1-LR}
+\]
+
+The gross applied depth then divides this value by application efficiency. The function reports the additional leaching depth, volume, and estimated sector runtime.
+
+This is a screening estimate for high-frequency drip irrigation. It assumes adequate drainage and a long-term salt balance. It does not model wetted fraction, soil texture, rainfall salt balance, shallow groundwater, or spatial salt distribution. Do not apply extra leaching water without confirming that drainage can remove the displaced salts. Use crop-specific salinity tolerance and laboratory water and soil analyses. The surface-irrigation equation is different and must not be substituted here.
+
+## 7. Validation still required for detailed design
 
 Before using results for construction or field operation, confirm:
 
