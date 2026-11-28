@@ -131,4 +131,5 @@ from .design_workflow import (
     design_drip_irrigation_system,
     design_irrigation_sectors,
     schedule_irrigation_sectors,
+    plan_daily_irrigation_from_crops,
 )
