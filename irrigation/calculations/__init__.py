@@ -133,3 +133,8 @@ from .design_workflow import (
     schedule_irrigation_sectors,
     plan_daily_irrigation_from_crops,
 )
+
+
+from .soil_water import (
+    calculate_irrigation_trigger,
+)
