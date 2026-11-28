@@ -229,6 +229,7 @@ Active development of the irrigation calculation engine.
 - JSON command-line interface.
 - Daily crop-water demand and sequential sector runtime planning from ET₀, Kc, planted area, and application efficiency.
 - FAO-56 soil-water storage, irrigation trigger interval, refill volume, and sector runtime estimates.
+- High-frequency drip leaching requirement estimates from irrigation-water EC and crop salinity tolerance.
 
 ## Hydraulic Methodology
 
